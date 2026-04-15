@@ -1,0 +1,80 @@
+name: food_lens
+description: AI Food Recognition & Calorie Estimation App (Flutter + Firebase + Cloudinary)
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # 🔥 STATE MANAGEMENT (chọn 1 - recommend Riverpod)
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.5.0
+
+  # ➡️ FUNCTIONAL PROGRAMMING (Either<Failure, Success>)
+  fpdart: ^1.1.0
+
+  # 🛣️ ROUTING
+  go_router: ^13.0.0
+
+  # 🔥 FIREBASE
+  firebase_core: ^3.15.2
+  firebase_auth: ^5.3.1
+  cloud_firestore: ^5.4.4
+
+  # 📡 NETWORK (gọi AI API)
+  dio: ^5.7.0
+
+  # 📷 IMAGE
+  image_picker: ^1.1.2
+
+  # ☁️ CLOUDINARY upload
+  http: ^1.6.0
+
+  # 🧠 MODEL / JSON
+  json_annotation: ^4.9.0
+
+  # 📦 LOCAL STORAGE (optional nhưng nên có)
+  shared_preferences: ^2.3.2
+
+  # 🔥 UTILITIES
+  intl: ^0.19.0
+  uuid: ^4.5.1
+
+  # 🎨 UI
+  flutter_svg: ^2.0.10+1
+  cached_network_image: ^3.4.1
+  flutter_dotenv: ^6.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+  # 🔧 CODE GENERATION (model)
+  build_runner: ^2.4.13
+  json_serializable: ^6.8.0
+  riverpod_generator: ^2.5.0
+
+  # 🧪 TESTING
+  mockito: ^5.4.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - .env
+
+  # fonts: (optional nếu bạn muốn UI đẹp hơn)
+  #   - family: Poppins
+  #     fonts:
+  #       - asset: assets/fonts/Poppins-Regular.ttf
