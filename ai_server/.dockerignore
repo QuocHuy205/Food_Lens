@@ -1,0 +1,12 @@
+Dockerfile
+.dockerignore
+*.pyc
+__pycache__
+.pytest_cache
+.git
+models/
+data/
+logs/
+*.egg-info
+.env
+.env.local

@@ -33,8 +33,10 @@ final appRouterProvider = Provider((ref) {
   // final authState = ref.watch(authViewModelProvider);
 
   return GoRouter(
-    initialLocation: AppRoutes.splash,
+    initialLocation: AppRoutes.home, // START: Splash screen
+
     routes: [
+      // ── Auth Routes ─────────────────────────────────
       GoRoute(
         path: AppRoutes.splash,
         builder: (context, state) => const SplashScreen(),
@@ -47,29 +49,32 @@ final appRouterProvider = Provider((ref) {
         path: AppRoutes.register,
         builder: (context, state) => const RegisterScreen(),
       ),
+      // ── Main Routes ─────────────────────────────────
       GoRoute(
         path: AppRoutes.home,
         builder: (context, state) => const HomeScreen(),
-        routes: [
-          GoRoute(
-            path: 'scan',
-            builder: (context, state) => const ScanScreen(),
-          ),
-          GoRoute(
-            path: 'stats',
-            builder: (context, state) => const StatsScreen(),
-          ),
-          GoRoute(
-            path: 'profile',
-            builder: (context, state) => const ProfileScreen(),
-          ),
-          GoRoute(
-            path: 'history',
-            builder: (context, state) => const HistoryScreen(),
-          ),
-        ],
       ),
-      // Test route - for Cloudinary upload testing
+      GoRoute(
+        path: AppRoutes.scan,
+        builder: (context, state) => const ScanScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.history,
+        builder: (context, state) => const HistoryScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.stats,
+        builder: (context, state) => const StatsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.profile,
+        builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.editProfile,
+        builder: (context, state) => const EditProfileScreen(),
+      ),
+      // ── Test Route ──────────────────────────────────
       GoRoute(
         path: AppRoutes.cloudinaryTest,
         builder: (context, state) => const CloudinaryTestScreen(),

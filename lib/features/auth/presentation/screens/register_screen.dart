@@ -1,79 +1,871 @@
+// ============================================================
+// 📱 SCREEN 03 — RegisterScreen
+// File: lib/screens/register_screen.dart
+// Route: /register
+// ============================================================
+
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+// ── App Colors (copy from login_screen.dart or shared file) ──
+class AppColors {
+  static const Color primary = Color(0xFF2E7D32);
+  static const Color primaryDark = Color(0xFF1B5E20);
+  static const Color accent = Color(0xFFFF6F00);
+  static const Color background = Color(0xFFF5F5F5);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color textPrimary = Color(0xFF212121);
+  static const Color textSecondary = Color(0xFF757575);
+  static const Color error = Color(0xFFD32F2F);
+  static const Color border = Color(0xFFE0E0E0);
+  static const Color success = Color(0xFF43A047);
+  static const Color warning = Color(0xFFFFA000);
+}
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({Key? key}) : super(key: key);
+  const RegisterScreen({super.key});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
-  late TextEditingController nameController;
-  late TextEditingController emailController;
-  late TextEditingController passwordController;
+class _RegisterScreenState extends State<RegisterScreen>
+    with TickerProviderStateMixin {
+  // ── Form ──────────────────────────────────────────────────
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  final _nameFocus = FocusNode();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
+  final _confirmFocus = FocusNode();
+
+  bool _obscurePassword = true;
+  bool _obscureConfirm = true;
+  bool _termsAccepted = false;
+  bool _isLoading = false;
+  int _passwordStrength = 0; // 0-4
+
+  // ── Animation Controllers ──────────────────────────────────
+  late AnimationController _pageEnterController;
+  late AnimationController _buttonController;
+  late AnimationController _strengthController;
+  late AnimationController _checkboxController;
+  late AnimationController _nameFocusController;
+  late AnimationController _emailFocusController;
+  late AnimationController _passwordFocusController;
+  late AnimationController _confirmFocusController;
+
+  // ── Animations ─────────────────────────────────────────────
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _buttonScale;
+  late Animation<double> _strengthWidth;
+  late Animation<double> _checkboxScale;
+  late Animation<Color?> _nameBorderColor;
+  late Animation<Color?> _emailBorderColor;
+  late Animation<Color?> _passwordBorderColor;
+  late Animation<Color?> _confirmBorderColor;
 
   @override
   void initState() {
     super.initState();
-    nameController = TextEditingController();
-    emailController = TextEditingController();
-    passwordController = TextEditingController();
+    _setupAnimations();
+    _setupFocusListeners();
+    _passwordController.addListener(_onPasswordChanged);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _pageEnterController.forward();
+    });
+  }
+
+  void _setupAnimations() {
+    // Page enter: 200ms slide + fade
+    _pageEnterController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(1.0, 0.0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _pageEnterController,
+      curve: Curves.easeOut,
+    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _pageEnterController, curve: Curves.easeOut),
+    );
+
+    // Button press: scale 0.98
+    _buttonController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _buttonScale = Tween<double>(begin: 1.0, end: 0.98).animate(
+      CurvedAnimation(parent: _buttonController, curve: Curves.easeInOut),
+    );
+
+    // Password strength bar: 800ms ease-out
+    _strengthController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _strengthWidth = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _strengthController, curve: Curves.easeOut),
+    );
+
+    // Checkbox animation: scale pop
+    _checkboxController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _checkboxScale = Tween<double>(begin: 1.0, end: 0.85).animate(
+      CurvedAnimation(parent: _checkboxController, curve: Curves.easeInOut),
+    );
+
+    // Focus border animations
+    _nameFocusController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _nameBorderColor = ColorTween(
+      begin: AppColors.border,
+      end: AppColors.primary,
+    ).animate(CurvedAnimation(
+      parent: _nameFocusController,
+      curve: Curves.easeOut,
+    ));
+
+    _emailFocusController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _emailBorderColor = ColorTween(
+      begin: AppColors.border,
+      end: AppColors.primary,
+    ).animate(CurvedAnimation(
+      parent: _emailFocusController,
+      curve: Curves.easeOut,
+    ));
+
+    _passwordFocusController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _passwordBorderColor = ColorTween(
+      begin: AppColors.border,
+      end: AppColors.primary,
+    ).animate(CurvedAnimation(
+      parent: _passwordFocusController,
+      curve: Curves.easeOut,
+    ));
+
+    _confirmFocusController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _confirmBorderColor = ColorTween(
+      begin: AppColors.border,
+      end: AppColors.primary,
+    ).animate(CurvedAnimation(
+      parent: _confirmFocusController,
+      curve: Curves.easeOut,
+    ));
+  }
+
+  void _setupFocusListeners() {
+    _nameFocus.addListener(() {
+      _nameFocus.hasFocus
+          ? _nameFocusController.forward()
+          : _nameFocusController.reverse();
+    });
+    _emailFocus.addListener(() {
+      _emailFocus.hasFocus
+          ? _emailFocusController.forward()
+          : _emailFocusController.reverse();
+    });
+    _passwordFocus.addListener(() {
+      _passwordFocus.hasFocus
+          ? _passwordFocusController.forward()
+          : _passwordFocusController.reverse();
+    });
+    _confirmFocus.addListener(() {
+      _confirmFocus.hasFocus
+          ? _confirmFocusController.forward()
+          : _confirmFocusController.reverse();
+    });
+  }
+
+  void _onPasswordChanged() {
+    final password = _passwordController.text;
+    int strength = 0;
+    if (password.length >= 6) strength++;
+    if (password.length >= 10) strength++;
+    if (RegExp(r'[A-Z]').hasMatch(password) &&
+        RegExp(r'[0-9]').hasMatch(password)) strength++;
+    if (RegExp(r'[!@#\$%^&*]').hasMatch(password)) strength++;
+
+    if (strength != _passwordStrength) {
+      setState(() => _passwordStrength = strength);
+      _strengthController.animateTo(
+        strength / 4.0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  Future<void> _handleRegister() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (!_termsAccepted) {
+      _showSnackBar('Bạn phải đồng ý điều khoản sử dụng', isError: true);
+      return;
+    }
+
+    await _buttonController.forward();
+    await _buttonController.reverse();
+
+    setState(() => _isLoading = true);
+
+    // Simulate API call
+    await Future.delayed(const Duration(milliseconds: 1500));
+
+    setState(() => _isLoading = false);
+    // TODO: Real register logic
+    // Navigator.pushReplacementNamed(context, '/home');
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? AppColors.error : AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        duration: const Duration(milliseconds: 3000),
+      ),
+    );
+  }
+
+  Color get _strengthColor {
+    switch (_passwordStrength) {
+      case 0:
+        return AppColors.error;
+      case 1:
+        return AppColors.warning;
+      case 2:
+        return AppColors.warning;
+      case 3:
+        return AppColors.primary;
+      case 4:
+        return AppColors.success;
+      default:
+        return AppColors.border;
+    }
+  }
+
+  String get _strengthLabel {
+    switch (_passwordStrength) {
+      case 0:
+        return '';
+      case 1:
+        return 'Yếu';
+      case 2:
+        return 'Trung bình';
+      case 3:
+        return 'Khá mạnh';
+      case 4:
+        return 'Mạnh';
+      default:
+        return '';
+    }
   }
 
   @override
   void dispose() {
-    nameController.dispose();
-    emailController.dispose();
-    passwordController.dispose();
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _nameFocus.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+    _confirmFocus.dispose();
+    _pageEnterController.dispose();
+    _buttonController.dispose();
+    _strengthController.dispose();
+    _checkboxController.dispose();
+    _nameFocusController.dispose();
+    _emailFocusController.dispose();
+    _passwordFocusController.dispose();
+    _confirmFocusController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Register')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Full Name',
-                border: OutlineInputBorder(),
+    return SlideTransition(
+      position: _slideAnimation,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: _buildAppBar(),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 8),
+
+                    // ── Header ────────────────────────────
+                    _buildHeader(),
+
+                    const SizedBox(height: 28),
+
+                    // ── Full Name ─────────────────────────
+                    _buildTextField(
+                      label: 'FULL NAME',
+                      hint: 'John Doe',
+                      controller: _nameController,
+                      focusNode: _nameFocus,
+                      borderColor: _nameBorderColor,
+                      focusController: _nameFocusController,
+                      prefixIcon: Icons.person_outline,
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Nhập họ tên';
+                        if (v.length < 3) return 'Ít nhất 3 ký tự';
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // ── Email ─────────────────────────────
+                    _buildTextField(
+                      label: 'EMAIL ADDRESS',
+                      hint: 'john@example.com',
+                      controller: _emailController,
+                      focusNode: _emailFocus,
+                      borderColor: _emailBorderColor,
+                      focusController: _emailFocusController,
+                      prefixIcon: Icons.mail_outline,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Nhập email';
+                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                            .hasMatch(v)) return 'Email không hợp lệ';
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // ── Password ──────────────────────────
+                    _buildPasswordFieldWithStrength(),
+
+                    const SizedBox(height: 14),
+
+                    // ── Confirm Password ──────────────────
+                    _buildTextField(
+                      label: 'CONFIRM PASSWORD',
+                      hint: '••••••••',
+                      controller: _confirmPasswordController,
+                      focusNode: _confirmFocus,
+                      borderColor: _confirmBorderColor,
+                      focusController: _confirmFocusController,
+                      prefixIcon: Icons.lock_outline,
+                      obscureText: _obscureConfirm,
+                      suffixIcon: GestureDetector(
+                        onTap: () =>
+                            setState(() => _obscureConfirm = !_obscureConfirm),
+                        child: Icon(
+                          _obscureConfirm
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: AppColors.textSecondary,
+                          size: 20,
+                        ),
+                      ),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Xác nhận mật khẩu';
+                        if (v != _passwordController.text) {
+                          return 'Mật khẩu không khớp';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // ── Terms Checkbox ────────────────────
+                    _buildTermsCheckbox(),
+
+                    const SizedBox(height: 24),
+
+                    // ── Register Button ───────────────────
+                    _buildRegisterButton(),
+
+                    const SizedBox(height: 20),
+
+                    // ── Login Link ────────────────────────
+                    _buildLoginLink(),
+
+                    const SizedBox(height: 32),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () {
-                // TODO: Handle register
-              },
-              child: const SizedBox(
-                width: double.infinity,
-                child: Text('Register', textAlign: TextAlign.center),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
+    );
+  }
+
+  // ── App Bar ──────────────────────────────────────────────
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: AppColors.background,
+      elevation: 0,
+      centerTitle: true,
+      title: const Text(
+        'Register',
+        style: TextStyle(
+          color: AppColors.textPrimary,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      leading: GestureDetector(
+        onTap: () => context.go('/login'),
+        child: const Icon(
+          Icons.arrow_back_ios,
+          color: AppColors.textPrimary,
+          size: 20,
+        ),
+      ),
+    );
+  }
+
+  // ── Header ───────────────────────────────────────────────
+
+  Widget _buildHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
+            ),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: const Icon(Icons.restaurant, color: Colors.white, size: 28),
+        ),
+        const SizedBox(height: 16),
+        const Text(
+          'Start your journey',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Join Food Lens AI to unlock personalized nutrition.',
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 13,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Generic Text Field ────────────────────────────────────
+
+  Widget _buildTextField({
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    required FocusNode focusNode,
+    required Animation<Color?> borderColor,
+    required AnimationController focusController,
+    required IconData prefixIcon,
+    Widget? suffixIcon,
+    bool obscureText = false,
+    TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.8,
+          ),
+        ),
+        const SizedBox(height: 6),
+        AnimatedBuilder(
+          animation: focusController,
+          builder: (context, child) {
+            return Container(
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: borderColor.value ?? AppColors.border,
+                  width: focusNode.hasFocus ? 2 : 1,
+                ),
+              ),
+              child: child,
+            );
+          },
+          child: TextFormField(
+            controller: controller,
+            focusNode: focusNode,
+            obscureText: obscureText,
+            keyboardType: keyboardType,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 14,
+            ),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(
+                color: AppColors.textSecondary.withOpacity(0.5),
+                fontSize: 14,
+              ),
+              prefixIcon:
+                  Icon(prefixIcon, color: AppColors.textSecondary, size: 20),
+              suffixIcon: suffixIcon,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+            ),
+            validator: validator,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Password Field with Strength Indicator ────────────────
+
+  Widget _buildPasswordFieldWithStrength() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'PASSWORD',
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.8,
+          ),
+        ),
+        const SizedBox(height: 6),
+        AnimatedBuilder(
+          animation: _passwordFocusController,
+          builder: (context, child) {
+            return Container(
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _passwordBorderColor.value ?? AppColors.border,
+                  width: _passwordFocus.hasFocus ? 2 : 1,
+                ),
+              ),
+              child: child,
+            );
+          },
+          child: TextFormField(
+            controller: _passwordController,
+            focusNode: _passwordFocus,
+            obscureText: _obscurePassword,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 14,
+            ),
+            decoration: InputDecoration(
+              hintText: '••••••••',
+              hintStyle: TextStyle(
+                color: AppColors.textSecondary.withOpacity(0.5),
+                fontSize: 18,
+                letterSpacing: 2,
+              ),
+              prefixIcon: const Icon(Icons.lock_outline,
+                  color: AppColors.textSecondary, size: 20),
+              suffixIcon: GestureDetector(
+                onTap: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
+                child: Icon(
+                  _obscurePassword
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  color: AppColors.textSecondary,
+                  size: 20,
+                ),
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+            ),
+            validator: (v) {
+              if (v == null || v.isEmpty) return 'Nhập mật khẩu';
+              if (v.length < 6) return 'Ít nhất 6 ký tự';
+              return null;
+            },
+          ),
+        ),
+
+        // ── Password Strength Bar ────────────────────────
+        if (_passwordController.text.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          _buildStrengthIndicator(),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildStrengthIndicator() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Bar
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: Stack(
+            children: [
+              // Background
+              Container(
+                height: 4,
+                width: double.infinity,
+                color: AppColors.border,
+              ),
+              // Filled
+              AnimatedBuilder(
+                animation: _strengthController,
+                builder: (context, _) {
+                  return FractionallySizedBox(
+                    widthFactor: _strengthController.value,
+                    child: Container(
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: _strengthColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        // Label
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: _passwordStrength > 0
+              ? Text(
+                  _strengthLabel,
+                  key: ValueKey(_strengthLabel),
+                  style: TextStyle(
+                    color: _strengthColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+
+  // ── Terms Checkbox ────────────────────────────────────────
+
+  Widget _buildTermsCheckbox() {
+    return GestureDetector(
+      onTap: () async {
+        await _checkboxController.forward();
+        await _checkboxController.reverse();
+        setState(() => _termsAccepted = !_termsAccepted);
+      },
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AnimatedBuilder(
+            animation: _checkboxController,
+            builder: (context, child) {
+              return Transform.scale(
+                scale: _checkboxScale.value,
+                child: child,
+              );
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                color: _termsAccepted ? AppColors.primary : Colors.transparent,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: _termsAccepted ? AppColors.primary : AppColors.border,
+                  width: 2,
+                ),
+              ),
+              child: _termsAccepted
+                  ? const Icon(Icons.check, size: 14, color: Colors.white)
+                  : null,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                text: 'I agree to the ',
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 13,
+                ),
+                children: [
+                  TextSpan(
+                    text: 'Terms of Service',
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const TextSpan(text: ' and '),
+                  TextSpan(
+                    text: 'Privacy Policy',
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Register Button ───────────────────────────────────────
+
+  Widget _buildRegisterButton() {
+    return AnimatedBuilder(
+      animation: _buttonController,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _buttonScale.value,
+          child: child,
+        );
+      },
+      child: GestureDetector(
+        onTapDown: (_) => _buttonController.forward(),
+        onTapUp: (_) {
+          _buttonController.reverse();
+          _handleRegister();
+        },
+        onTapCancel: () => _buttonController.reverse(),
+        child: Container(
+          height: 52,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF2E7D32), Color(0xFF388E3C)],
+            ),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withOpacity(0.35),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Center(
+            child: _isLoading
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Register',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      SizedBox(width: 6),
+                      Icon(Icons.arrow_forward, color: Colors.white, size: 18),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Login Link ────────────────────────────────────────────
+
+  Widget _buildLoginLink() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Text(
+          'Already have an account? ',
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 14,
+          ),
+        ),
+        GestureDetector(
+          onTap: () => context.go('/login'),
+          child: const Text(
+            'Sign In',
+            style: TextStyle(
+              color: AppColors.primary,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

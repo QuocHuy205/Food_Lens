@@ -1,14 +1,21 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 // API configurations and environment variables
 class AppConfig {
   // Firebase
   static const String firebaseProjectId = 'food-ai-app-xxxxx';
 
-  // Cloudinary
-  static const String cloudinaryCloudName = 'your-cloud-name';
-  static const String cloudinaryUploadPreset = 'your-upload-preset';
+  // Cloudinary — Load từ .env
+  static String get cloudinaryCloudName =>
+      dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? 'your-cloud-name';
 
-  // AI API
-  static const String aiApiBaseUrl = 'http://10.0.2.2:8000'; // Android emulator
+  static String get cloudinaryUploadPreset =>
+      dotenv.env['CLOUDINARY_UPLOAD_PRESET'] ?? 'your-upload-preset';
+
+  // AI API — Load từ .env hoặc default
+  static String get aiApiBaseUrl =>
+      dotenv.env['AI_SERVER_URL'] ?? 'http://10.0.2.2:8000'; // Android emulator
+
   static const String analyzeEndpoint = '/analyze';
 
   // App

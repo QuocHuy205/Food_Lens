@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  food-ai-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: food_lens_ai_server
+
+    ports:
+      - "8000:8000"
+
+    environment:
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8000
+      - DEBUG=True
+      - TF_CPP_MIN_LOG_LEVEL=2
+
+    volumes:
+      - ./models:/app/models
+      - ./data:/app/data
+      - ./logs:/app/logs
+
+    networks:
+      - food-lens-network
+
+    # Auto-restart
+    restart: unless-stopped
+
+networks:
+  food-lens-network:
+    driver: bridge

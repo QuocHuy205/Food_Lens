@@ -6,7 +6,7 @@ class ScanResult {
   final DateTime scannedAt;
   final String? imageUrl;
 
-  ScanResult({
+  const ScanResult({
     required this.foodName,
     required this.estimatedCalories,
     required this.confidence,
