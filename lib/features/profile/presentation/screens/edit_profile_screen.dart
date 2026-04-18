@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:food_lens/core/theme/app_colors.dart';
+import 'package:food_lens/core/widgets/animated_widgets.dart';
 
-class AppColors {
-  static const Color primary = Color(0xFF2E7D32);
-  static const Color background = Color(0xFFF5F5F5);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color border = Color(0xFFE0E0E0);
-  static const Color success = Color(0xFF43A047);
-}
+// ═══════════════════════════════════════════════════════════
+// EDIT PROFILE SCREEN — With animations
+// Refactored: Page enter + staggered content
+// ═══════════════════════════════════════════════════════════
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -18,12 +15,20 @@ class EditProfileScreen extends StatefulWidget {
   State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-class _EditProfileScreenState extends State<EditProfileScreen> {
+class _EditProfileScreenState extends State<EditProfileScreen>
+    with TickerProviderStateMixin {
+  // ── Animation Controllers ──────────────────────────────────
+  late AnimationController _pageEnterController;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+
+  // ── Controllers ─────────────────────────────────────────────
   late TextEditingController nameController;
   late TextEditingController ageController;
   late TextEditingController heightController;
   late TextEditingController weightController;
 
+  // ── State ──────────────────────────────────────────────────
   String? selectedGender;
   String? selectedActivityLevel;
   String? selectedGoal;
@@ -32,6 +37,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _setupAnimations();
+
     nameController = TextEditingController(text: 'John Doe');
     ageController = TextEditingController(text: '28');
     heightController = TextEditingController(text: '178');
@@ -39,10 +46,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     selectedGender = 'Male';
     selectedActivityLevel = 'Moderate';
     selectedGoal = 'Maintain';
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _pageEnterController.forward();
+    });
+  }
+
+  void _setupAnimations() {
+    _pageEnterController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0.0, 0.1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _pageEnterController,
+      curve: Curves.easeOut,
+    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _pageEnterController, curve: Curves.easeOut),
+    );
   }
 
   @override
   void dispose() {
+    _pageEnterController.dispose();
     nameController.dispose();
     ageController.dispose();
     heightController.dispose();
@@ -50,6 +79,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // CALCULATIONS
+  // ═══════════════════════════════════════════════════════════
   double get bmi {
     final height = double.tryParse(heightController.text) ?? 0;
     final weight = double.tryParse(weightController.text) ?? 0;
@@ -63,7 +95,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final age = double.tryParse(ageController.text) ?? 0;
     if (weight == 0 || height == 0 || age == 0) return 0;
 
-    // Mifflin-St Jeor equation
     double bmr;
     if (selectedGender == 'Male') {
       bmr = 10 * weight + 6.25 * height - 5 * age + 5;
@@ -71,7 +102,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       bmr = 10 * weight + 6.25 * height - 5 * age - 161;
     }
 
-    // Activity multiplier
     double activityMultiplier = 1.375;
     switch (selectedActivityLevel) {
       case 'Sedentary':
@@ -96,154 +126,198 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: _buildAppBar(context),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Personal Info Section ───────────────
-            _buildSectionTitle('Personal Information'),
-            const SizedBox(height: 12),
-            _buildTextField('Full Name', nameController),
-            const SizedBox(height: 12),
-            _buildTextField('Age', ageController, isNumeric: true),
-            const SizedBox(height: 12),
-            _buildDropdownField('Gender', selectedGender, ['Male', 'Female'],
-                (value) {
-              setState(() => selectedGender = value);
-            }),
-            const SizedBox(height: 24),
-            // ── Physical Measurements ───────────────
-            _buildSectionTitle('Physical Measurements'),
-            const SizedBox(height: 12),
-            Row(
+    return SlideTransition(
+      position: _slideAnimation,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: _buildAppBar(context),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: _buildTextField('Height (cm)', heightController,
-                      isNumeric: true, onChanged: (_) {
-                    setState(() {});
+                // ── Personal Info Section ───────────────
+                FadeInWidget(
+                  delay: const Duration(milliseconds: 100),
+                  child: _buildSectionTitle('Personal Information'),
+                ),
+                const SizedBox(height: 12),
+                FadeInWidget(
+                  delay: const Duration(milliseconds: 150),
+                  child: _buildTextField('Full Name', nameController),
+                ),
+                const SizedBox(height: 12),
+                FadeInWidget(
+                  delay: const Duration(milliseconds: 200),
+                  child: _buildTextField('Age', ageController, isNumeric: true),
+                ),
+                const SizedBox(height: 12),
+                FadeInWidget(
+                  delay: const Duration(milliseconds: 250),
+                  child: _buildDropdownField(
+                      'Gender', selectedGender, ['Male', 'Female'], (value) {
+                    setState(() => selectedGender = value);
                   }),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildTextField('Weight (kg)', weightController,
-                      isNumeric: true, onChanged: (_) {
-                    setState(() {});
-                  }),
+                const SizedBox(height: 24),
+                // ── Physical Measurements ───────────────
+                FadeInWidget(
+                  delay: const Duration(milliseconds: 300),
+                  child: _buildSectionTitle('Physical Measurements'),
                 ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            // ── BMI Display ─────────────────────────
-            _buildInfoCard(
-              'BMI',
-              '${bmi.toStringAsFixed(1)}',
-              _getBMIStatus(bmi),
-              _getBMIColor(bmi),
-            ),
-            const SizedBox(height: 12),
-            // ── TDEE Display ────────────────────────
-            _buildInfoCard(
-              'Daily Calorie Needs (TDEE)',
-              '${tdee.toStringAsFixed(0)} kcal',
-              'Based on ${selectedActivityLevel?.toLowerCase()} activity',
-              Colors.blue,
-            ),
-            const SizedBox(height: 24),
-            // ── Activity & Goal ─────────────────────
-            _buildSectionTitle('Activity & Goal'),
-            const SizedBox(height: 12),
-            _buildDropdownField('Activity Level', selectedActivityLevel, [
-              'Sedentary',
-              'Light',
-              'Moderate',
-              'Active',
-              'Very Active'
-            ], (value) {
-              setState(() => selectedActivityLevel = value);
-            }),
-            const SizedBox(height: 12),
-            _buildDropdownField('Goal', selectedGoal,
-                ['Lose Weight', 'Maintain', 'Gain Weight'], (value) {
-              setState(() => selectedGoal = value);
-            }),
-            const SizedBox(height: 24),
-            // ── Action Buttons ──────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => context.go('/profile'),
-                    child: Container(
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
+                const SizedBox(height: 12),
+                FadeInWidget(
+                  delay: const Duration(milliseconds: 350),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _buildTextField('Height (cm)', heightController,
+                            isNumeric: true, onChanged: (_) {
+                          setState(() {});
+                        }),
                       ),
-                      child: const Center(
-                        child: Text(
-                          'Discard',
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildTextField('Weight (kg)', weightController,
+                            isNumeric: true, onChanged: (_) {
+                          setState(() {});
+                        }),
                       ),
-                    ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: _saveProfile,
-                    child: Container(
-                      height: 52,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2E7D32), Color(0xFF388E3C)],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: isSaving
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text(
-                                'Save Changes',
+                const SizedBox(height: 24),
+                // ── BMI Display ─────────────────────────
+                FadeInWidget(
+                  delay: const Duration(milliseconds: 400),
+                  child: _buildInfoCard(
+                    'BMI',
+                    '${bmi.toStringAsFixed(1)}',
+                    _getBMIStatus(bmi),
+                    _getBMIColor(bmi),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // ── TDEE Display ────────────────────────
+                FadeInWidget(
+                  delay: const Duration(milliseconds: 450),
+                  child: _buildInfoCard(
+                    'Daily Calorie Needs (TDEE)',
+                    '${tdee.toStringAsFixed(0)} kcal',
+                    'Based on ${selectedActivityLevel?.toLowerCase()} activity',
+                    Colors.blue,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // ── Activity & Goal ─────────────────────
+                FadeInWidget(
+                  delay: const Duration(milliseconds: 500),
+                  child: _buildSectionTitle('Activity & Goal'),
+                ),
+                const SizedBox(height: 12),
+                FadeInWidget(
+                  delay: const Duration(milliseconds: 550),
+                  child: _buildDropdownField(
+                      'Activity Level', selectedActivityLevel, [
+                    'Sedentary',
+                    'Light',
+                    'Moderate',
+                    'Active',
+                    'Very Active'
+                  ], (value) {
+                    setState(() => selectedActivityLevel = value);
+                  }),
+                ),
+                const SizedBox(height: 12),
+                FadeInWidget(
+                  delay: const Duration(milliseconds: 600),
+                  child: _buildDropdownField('Goal', selectedGoal,
+                      ['Lose Weight', 'Maintain', 'Gain Weight'], (value) {
+                    setState(() => selectedGoal = value);
+                  }),
+                ),
+                const SizedBox(height: 24),
+                // ── Action Buttons ──────────────────────
+                FadeInWidget(
+                  delay: const Duration(milliseconds: 650),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => context.go('/profile'),
+                          child: Container(
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                'Discard',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.textPrimary,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: _saveProfile,
+                          child: Container(
+                            height: 52,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF2E7D32), Color(0xFF388E3C)],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withOpacity(0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: isSaving
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                          Colors.white,
+                                        ),
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Save Changes',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                const SizedBox(height: 20),
               ],
             ),
-            const SizedBox(height: 20),
-          ],
+          ),
         ),
       ),
     );

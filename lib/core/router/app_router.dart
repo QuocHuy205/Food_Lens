@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:food_lens/features/auth/presentation/screens/splash_screen.dart';
 import 'package:food_lens/features/auth/presentation/screens/login_screen.dart';
 import 'package:food_lens/features/auth/presentation/screens/register_screen.dart';
+import 'package:food_lens/features/auth/presentation/screens/forgot_password_screen.dart';
 import 'package:food_lens/features/home/presentation/screens/home_screen.dart';
 import 'package:food_lens/features/scan/presentation/screens/scan_screen.dart';
 import 'package:food_lens/features/nutrition/presentation/screens/stats_screen.dart';
@@ -19,6 +20,7 @@ class AppRoutes {
   static const String splash = '/';
   static const String login = '/login';
   static const String register = '/register';
+  static const String forgotPassword = '/forgot-password';
   static const String home = '/home';
   static const String scan = '/scan';
   static const String stats = '/stats';
@@ -28,56 +30,141 @@ class AppRoutes {
   static const String cloudinaryTest = '/cloudinary-test'; // For testing upload
 }
 
+// ═══════════════════════════════════════════════════════════
+// CUSTOM PAGE TRANSITION — Smooth Fade + Scale
+// ═══════════════════════════════════════════════════════════
+CustomTransitionPage<T> _buildSmoothPage<T>({
+  required BuildContext context,
+  required GoRouterState state,
+  required Widget child,
+}) {
+  return CustomTransitionPage<T>(
+    key: state.pageKey,
+    child: child,
+    // Thời gian transition
+    transitionDuration: const Duration(milliseconds: 250),
+    reverseTransitionDuration: const Duration(milliseconds: 200),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      // Sử dụng easeOutCubic cho animation mượt mà
+      final curvedAnimation = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      );
+
+      // Wrap trong Container có màu nền để tránh đen khi transition
+      return FadeTransition(
+        opacity: Tween<double>(begin: 0.0, end: 1.0).animate(curvedAnimation),
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.98, end: 1.0).animate(curvedAnimation),
+          child: Container(
+            color: const Color(0xFFF5F5F5), // AppColors.background
+            child: child,
+          ),
+        ),
+      );
+    },
+  );
+}
+
 final appRouterProvider = Provider((ref) {
   // TODO: Wire auth state from authViewModelProvider
   // final authState = ref.watch(authViewModelProvider);
 
   return GoRouter(
-    initialLocation: AppRoutes.home, // START: Splash screen
+    initialLocation: AppRoutes.splash, // START: Splash screen
 
     routes: [
       // ── Auth Routes ─────────────────────────────────
       GoRoute(
         path: AppRoutes.splash,
-        builder: (context, state) => const SplashScreen(),
+        pageBuilder: (context, state) => _buildSmoothPage(
+          context: context,
+          state: state,
+          child: const SplashScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.login,
-        builder: (context, state) => const LoginScreen(),
+        pageBuilder: (context, state) => _buildSmoothPage(
+          context: context,
+          state: state,
+          child: const LoginScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.register,
-        builder: (context, state) => const RegisterScreen(),
+        pageBuilder: (context, state) => _buildSmoothPage(
+          context: context,
+          state: state,
+          child: const RegisterScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.forgotPassword,
+        pageBuilder: (context, state) => _buildSmoothPage(
+          context: context,
+          state: state,
+          child: const ForgotPasswordScreen(),
+        ),
       ),
       // ── Main Routes ─────────────────────────────────
       GoRoute(
         path: AppRoutes.home,
-        builder: (context, state) => const HomeScreen(),
+        pageBuilder: (context, state) => _buildSmoothPage(
+          context: context,
+          state: state,
+          child: const HomeScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.scan,
-        builder: (context, state) => const ScanScreen(),
+        pageBuilder: (context, state) => _buildSmoothPage(
+          context: context,
+          state: state,
+          child: const ScanScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.history,
-        builder: (context, state) => const HistoryScreen(),
+        pageBuilder: (context, state) => _buildSmoothPage(
+          context: context,
+          state: state,
+          child: const HistoryScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.stats,
-        builder: (context, state) => const StatsScreen(),
+        pageBuilder: (context, state) => _buildSmoothPage(
+          context: context,
+          state: state,
+          child: const StatsScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.profile,
-        builder: (context, state) => const ProfileScreen(),
+        pageBuilder: (context, state) => _buildSmoothPage(
+          context: context,
+          state: state,
+          child: const ProfileScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.editProfile,
-        builder: (context, state) => const EditProfileScreen(),
+        pageBuilder: (context, state) => _buildSmoothPage(
+          context: context,
+          state: state,
+          child: const EditProfileScreen(),
+        ),
       ),
       // ── Test Route ──────────────────────────────────
       GoRoute(
         path: AppRoutes.cloudinaryTest,
-        builder: (context, state) => const CloudinaryTestScreen(),
+        pageBuilder: (context, state) => _buildSmoothPage(
+          context: context,
+          state: state,
+          child: const CloudinaryTestScreen(),
+        ),
       ),
     ],
     redirect: (context, state) {

@@ -242,6 +242,16 @@ class _LoginScreenState extends State<LoginScreen>
 
                     const SizedBox(height: 24),
 
+                    // ── Google Sign-In Button ─────────────────
+                    _buildGoogleButton(),
+
+                    const SizedBox(height: 24),
+
+                    // ── Divider ───────────────────────────────
+                    _buildDivider(),
+
+                    const SizedBox(height: 24),
+
                     // ── Register Link ─────────────────────
                     _buildRegisterLink(),
 
@@ -494,7 +504,7 @@ class _LoginScreenState extends State<LoginScreen>
       alignment: Alignment.centerRight,
       child: GestureDetector(
         onTap: () {
-          // TODO: Navigate to forgot password
+          context.go('/forgot-password');
         },
         child: const Text(
           'Forgot Password?',
@@ -561,6 +571,111 @@ class _LoginScreenState extends State<LoginScreen>
           ),
         ),
       ),
+    );
+  }
+
+  // ── Google Sign-In Button ─────────────────────────────────
+  Widget _buildGoogleButton() {
+    return GestureDetector(
+      onTap: () {
+        // TODO: Implement Google Sign-In
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Google Sign-In coming soon!'),
+            backgroundColor: AppColors.primary,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      },
+      child: Container(
+        height: 52,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppColors.border,
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Google Icon
+            Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // G icon (simplified)
+                  const Text(
+                    'G',
+                    style: TextStyle(
+                      color: Color(0xFF4285F4),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Continue with Google',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Divider ───────────────────────────────────────────────
+  Widget _buildDivider() {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            height: 1,
+            color: AppColors.border,
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'or',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 13,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: AppColors.border,
+          ),
+        ),
+      ],
     );
   }
 

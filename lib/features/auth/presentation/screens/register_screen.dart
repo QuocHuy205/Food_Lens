@@ -318,112 +318,139 @@ class _RegisterScreenState extends State<RegisterScreen>
           backgroundColor: AppColors.background,
           appBar: _buildAppBar(),
           body: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 8),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints:
+                        BoxConstraints(minHeight: constraints.maxHeight),
+                    child: IntrinsicHeight(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const SizedBox(height: 4),
 
-                    // ── Header ────────────────────────────
-                    _buildHeader(),
+                              // ── Header ────────────────────────────
+                              _buildHeader(),
 
-                    const SizedBox(height: 28),
+                              const SizedBox(height: 16),
 
-                    // ── Full Name ─────────────────────────
-                    _buildTextField(
-                      label: 'FULL NAME',
-                      hint: 'John Doe',
-                      controller: _nameController,
-                      focusNode: _nameFocus,
-                      borderColor: _nameBorderColor,
-                      focusController: _nameFocusController,
-                      prefixIcon: Icons.person_outline,
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return 'Nhập họ tên';
-                        if (v.length < 3) return 'Ít nhất 3 ký tự';
-                        return null;
-                      },
-                    ),
+                              // ── Full Name ─────────────────────────
+                              _buildTextField(
+                                label: 'FULL NAME',
+                                hint: 'John Doe',
+                                controller: _nameController,
+                                focusNode: _nameFocus,
+                                borderColor: _nameBorderColor,
+                                focusController: _nameFocusController,
+                                prefixIcon: Icons.person_outline,
+                                validator: (v) {
+                                  if (v == null || v.isEmpty)
+                                    return 'Nhập họ tên';
+                                  if (v.length < 3) return 'Ít nhất 3 ký tự';
+                                  return null;
+                                },
+                              ),
 
-                    const SizedBox(height: 14),
+                              const SizedBox(height: 10),
 
-                    // ── Email ─────────────────────────────
-                    _buildTextField(
-                      label: 'EMAIL ADDRESS',
-                      hint: 'john@example.com',
-                      controller: _emailController,
-                      focusNode: _emailFocus,
-                      borderColor: _emailBorderColor,
-                      focusController: _emailFocusController,
-                      prefixIcon: Icons.mail_outline,
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return 'Nhập email';
-                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                            .hasMatch(v)) return 'Email không hợp lệ';
-                        return null;
-                      },
-                    ),
+                              // ── Email ─────────────────────────────
+                              _buildTextField(
+                                label: 'EMAIL ADDRESS',
+                                hint: 'john@example.com',
+                                controller: _emailController,
+                                focusNode: _emailFocus,
+                                borderColor: _emailBorderColor,
+                                focusController: _emailFocusController,
+                                prefixIcon: Icons.mail_outline,
+                                keyboardType: TextInputType.emailAddress,
+                                validator: (v) {
+                                  if (v == null || v.isEmpty)
+                                    return 'Nhập email';
+                                  if (!RegExp(
+                                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                                      .hasMatch(v)) return 'Email không hợp lệ';
+                                  return null;
+                                },
+                              ),
 
-                    const SizedBox(height: 14),
+                              const SizedBox(height: 10),
 
-                    // ── Password ──────────────────────────
-                    _buildPasswordFieldWithStrength(),
+                              // ── Password ──────────────────────────
+                              _buildPasswordFieldWithStrength(),
 
-                    const SizedBox(height: 14),
+                              const SizedBox(height: 10),
 
-                    // ── Confirm Password ──────────────────
-                    _buildTextField(
-                      label: 'CONFIRM PASSWORD',
-                      hint: '••••••••',
-                      controller: _confirmPasswordController,
-                      focusNode: _confirmFocus,
-                      borderColor: _confirmBorderColor,
-                      focusController: _confirmFocusController,
-                      prefixIcon: Icons.lock_outline,
-                      obscureText: _obscureConfirm,
-                      suffixIcon: GestureDetector(
-                        onTap: () =>
-                            setState(() => _obscureConfirm = !_obscureConfirm),
-                        child: Icon(
-                          _obscureConfirm
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          color: AppColors.textSecondary,
-                          size: 20,
+                              // ── Confirm Password ──────────────────
+                              _buildTextField(
+                                label: 'CONFIRM PASSWORD',
+                                hint: '••••••••',
+                                controller: _confirmPasswordController,
+                                focusNode: _confirmFocus,
+                                borderColor: _confirmBorderColor,
+                                focusController: _confirmFocusController,
+                                prefixIcon: Icons.lock_outline,
+                                obscureText: _obscureConfirm,
+                                suffixIcon: GestureDetector(
+                                  onTap: () => setState(
+                                      () => _obscureConfirm = !_obscureConfirm),
+                                  child: Icon(
+                                    _obscureConfirm
+                                        ? Icons.visibility_off_outlined
+                                        : Icons.visibility_outlined,
+                                    color: AppColors.textSecondary,
+                                    size: 20,
+                                  ),
+                                ),
+                                validator: (v) {
+                                  if (v == null || v.isEmpty)
+                                    return 'Xác nhận mật khẩu';
+                                  if (v != _passwordController.text) {
+                                    return 'Mật khẩu không khớp';
+                                  }
+                                  return null;
+                                },
+                              ),
+
+                              const SizedBox(height: 10),
+
+                              // ── Terms Checkbox ────────────────────
+                              _buildTermsCheckbox(),
+
+                              const SizedBox(height: 16),
+
+                              // ── Register Button ───────────────────
+                              _buildRegisterButton(),
+
+                              const SizedBox(height: 12),
+
+                              // ── Divider ────────────────────────────
+                              _buildDivider(),
+
+                              const SizedBox(height: 12),
+
+                              // ── Google Sign-In Button ─────────────
+                              _buildGoogleButton(),
+
+                              const SizedBox(height: 12),
+
+                              // ── Login Link ────────────────────────
+                              _buildLoginLink(),
+
+                              const SizedBox(height: 16),
+                            ],
+                          ),
                         ),
                       ),
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return 'Xác nhận mật khẩu';
-                        if (v != _passwordController.text) {
-                          return 'Mật khẩu không khớp';
-                        }
-                        return null;
-                      },
                     ),
-
-                    const SizedBox(height: 16),
-
-                    // ── Terms Checkbox ────────────────────
-                    _buildTermsCheckbox(),
-
-                    const SizedBox(height: 24),
-
-                    // ── Register Button ───────────────────
-                    _buildRegisterButton(),
-
-                    const SizedBox(height: 20),
-
-                    // ── Login Link ────────────────────────
-                    _buildLoginLink(),
-
-                    const SizedBox(height: 32),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
           ),
         ),
@@ -446,14 +473,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           fontWeight: FontWeight.w600,
         ),
       ),
-      leading: GestureDetector(
-        onTap: () => context.go('/login'),
-        child: const Icon(
-          Icons.arrow_back_ios,
-          color: AppColors.textPrimary,
-          size: 20,
-        ),
-      ),
+      automaticallyImplyLeading: false,
     );
   }
 
@@ -836,6 +856,105 @@ class _RegisterScreenState extends State<RegisterScreen>
                     ],
                   ),
           ),
+        ),
+      ),
+    );
+  }
+
+  // ── Divider ───────────────────────────────────────────────
+  Widget _buildDivider() {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            height: 1,
+            color: AppColors.border,
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'or',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 13,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: AppColors.border,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Google Sign-In Button ─────────────────────────────────
+  Widget _buildGoogleButton() {
+    return GestureDetector(
+      onTap: () {
+        // TODO: Implement Google Sign-In
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Google Sign-In coming soon!'),
+            backgroundColor: AppColors.primary,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      },
+      child: Container(
+        height: 52,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppColors.border,
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Google Icon
+            Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Text(
+                'G',
+                style: TextStyle(
+                  color: Color(0xFF4285F4),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Continue with Google',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:food_lens/core/theme/app_colors.dart';
+import 'package:food_lens/core/widgets/animated_widgets.dart';
 
-class AppColors {
-  static const Color primary = Color(0xFF2E7D32);
-  static const Color accent = Color(0xFFFF6F00);
-  static const Color background = Color(0xFFF5F5F5);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color border = Color(0xFFE0E0E0);
-}
+// ═══════════════════════════════════════════════════════════
+// STATS SCREEN — With animations
+// Refactored: Page enter + staggered content + animated period selector
+// ═══════════════════════════════════════════════════════════
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({super.key});
@@ -18,76 +15,113 @@ class StatsScreen extends StatefulWidget {
   State<StatsScreen> createState() => _StatsScreenState();
 }
 
-class _StatsScreenState extends State<StatsScreen> {
+class _StatsScreenState extends State<StatsScreen>
+    with TickerProviderStateMixin {
+  // ── Animation Controllers ──────────────────────────────────
+  late AnimationController _pageEnterController;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+
+  // ── State ──────────────────────────────────────────────────
   String selectedPeriod = '7 Days';
 
   @override
+  void initState() {
+    super.initState();
+    _setupAnimations();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _pageEnterController.forward();
+    });
+  }
+
+  void _setupAnimations() {
+    _pageEnterController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0.0, 0.1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _pageEnterController,
+      curve: Curves.easeOut,
+    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _pageEnterController, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pageEnterController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: _buildAppBar(),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Period Selector ─────────────────────
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: ['7 Days', '30 Days', '90 Days', '1 Year']
-                    .map((period) => Padding(
+    return SlideTransition(
+      position: _slideAnimation,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: _buildAppBar(),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Period Selector ─────────────────────
+                FadeInWidget(
+                  delay: const Duration(milliseconds: 100),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: ['7 Days', '30 Days', '90 Days', '1 Year']
+                          .asMap()
+                          .entries
+                          .map((entry) {
+                        final period = entry.value;
+                        final index = entry.key;
+                        return Padding(
                           padding: const EdgeInsets.only(right: 8),
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() => selectedPeriod = period);
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: selectedPeriod == period
-                                    ? AppColors.primary
-                                    : AppColors.surface,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: selectedPeriod == period
-                                      ? AppColors.primary
-                                      : AppColors.border,
-                                ),
-                              ),
-                              child: Text(
-                                period,
-                                style: TextStyle(
-                                  color: selectedPeriod == period
-                                      ? Colors.white
-                                      : AppColors.textPrimary,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
+                          child: _AnimatedPeriodChip(
+                            label: period,
+                            isSelected: selectedPeriod == period,
+                            onTap: () =>
+                                setState(() => selectedPeriod = period),
+                            delay: Duration(milliseconds: 150 + (index * 50)),
                           ),
-                        ))
-                    .toList(),
-              ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // ── Summary Cards ───────────────────────
+                FadeInWidget(
+                  delay: const Duration(milliseconds: 200),
+                  child: _buildSummaryCards(),
+                ),
+                const SizedBox(height: 24),
+                // ── Calories Trend ──────────────────────
+                FadeInWidget(
+                  delay: const Duration(milliseconds: 300),
+                  child: _buildTrendChart(),
+                ),
+                const SizedBox(height: 24),
+                // ── Macro Breakdown ─────────────────────
+                FadeInWidget(
+                  delay: const Duration(milliseconds: 400),
+                  child: _buildMacroBreakdown(),
+                ),
+                const SizedBox(height: 24),
+              ],
             ),
-            const SizedBox(height: 24),
-            // ── Summary Cards ───────────────────────
-            _buildSummaryCards(),
-            const SizedBox(height: 24),
-            // ── Calories Trend ──────────────────────
-            _buildTrendChart(),
-            const SizedBox(height: 24),
-            // ── Macro Breakdown ─────────────────────
-            _buildMacroBreakdown(),
-            const SizedBox(height: 24),
-          ],
+          ),
+          bottomNavigationBar: _buildBottomNav(context),
         ),
       ),
-      bottomNavigationBar: _buildBottomNav(context),
     );
   }
 
@@ -403,8 +437,15 @@ class _StatsScreenState extends State<StatsScreen> {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
         border: Border(
-          top: BorderSide(color: AppColors.border, width: 1),
+          top: BorderSide(color: AppColors.border.withOpacity(0.5), width: 0.5),
         ),
       ),
       child: BottomNavigationBar(
@@ -413,12 +454,36 @@ class _StatsScreenState extends State<StatsScreen> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textSecondary,
+        selectedFontSize: 11,
+        unselectedFontSize: 11,
+        iconSize: 24,
+        currentIndex: 3,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.camera_alt), label: 'Scan'),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Stats'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.camera_alt_outlined),
+            activeIcon: Icon(Icons.camera_alt),
+            label: 'Scan',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history_outlined),
+            activeIcon: Icon(Icons.history),
+            label: 'History',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart_outlined),
+            activeIcon: Icon(Icons.bar_chart),
+            label: 'Stats',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'Profile',
+          ),
         ],
         onTap: (index) {
           switch (index) {
@@ -439,6 +504,100 @@ class _StatsScreenState extends State<StatsScreen> {
               break;
           }
         },
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// HELPER WIDGETS
+// ═══════════════════════════════════════════════════════════
+
+/// Animated period chip with scale feedback
+class _AnimatedPeriodChip extends StatefulWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final Duration delay;
+
+  const _AnimatedPeriodChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+    required this.delay,
+  });
+
+  @override
+  State<_AnimatedPeriodChip> createState() => _AnimatedPeriodChipState();
+}
+
+class _AnimatedPeriodChipState extends State<_AnimatedPeriodChip>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+
+    Future.delayed(widget.delay, () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _scaleAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: child,
+        );
+      },
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: widget.isSelected ? AppColors.primary : AppColors.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: widget.isSelected ? AppColors.primary : AppColors.border,
+            ),
+            boxShadow: widget.isSelected
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Text(
+            widget.label,
+            style: TextStyle(
+              color: widget.isSelected ? Colors.white : AppColors.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
       ),
     );
   }

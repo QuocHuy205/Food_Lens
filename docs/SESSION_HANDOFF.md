@@ -1,10 +1,99 @@
-# 🔄 SESSION HANDOFF — Trạng Thái Cho AI Tiếp Theo (UPDATED - Session 8)
+# 🔄 SESSION HANDOFF — Trạng Thái Cho AI Tiếp Theo (UPDATED - Session 11)
 
 > Cập nhật file này sau mỗi session để AI session sau biết đang ở đâu.
 
 ---
 
-## Session 8 ✅ XONG — UI Complete Testing & Navigation Verification (Apr 16, 2026)
+## Session 11 ✅ XONG — Forgot Password Router Fix (Apr 19, 2026)
+
+### ⚡ Hiện Tại (UI LAYER 100% COMPLETE):
+
+| Thành Phần          | Trạng Thái                                |
+| ------------------- | ----------------------------------------- |
+| Architecture        | ✅ Server-Client Separation OK            |
+| AppConfig           | ✅ Loads from .env                        |
+| Datasources         | ✅ HTTP + Firestore implemented           |
+| Models              | ✅ Better JSON parsing                    |
+| Repositories        | ✅ Wired all datasources                  |
+| **UI Screens (11)** | ✅ **ALL COMPLETE + ANIMATED + TESTED**   |
+| **App Running**     | ✅ **Full navigation working + verified** |
+| **Router Config**   | ✅ **Top-level routes (no nesting)**      |
+| **Phase Tiếp Theo** | 🟡 **Phase 2 — Auth Implementation**      |
+
+---
+
+### ✅ Đã Hoàn Thành (Session 11):
+
+**Forgot Password Router Fix** ✅
+
+- Verified all router configurations are correct:
+  - Import: `forgot_password_screen.dart` in app_router.dart ✅
+  - Route: `/forgot-password` added to routes ✅
+  - AppRoutes.forgotPassword = '/forgot-password' ✅
+  - LoginScreen: `context.go('/forgot-password')` ✅
+- ForgotPasswordScreen exists and has correct class name ✅
+- Build verified: `flutter build apk --debug` ✅
+
+**Navigation Flow:**
+
+- LoginScreen → "Forgot Password?" link → `/forgot-password`
+- ForgotPasswordScreen → "Sign In" link → `/login`
+- ForgotPasswordScreen → Back button → `/login`
+
+---
+
+## Session 10 ✅ XONG — Google Sign-In + Forgot Password Screen (Apr 18, 2026)
+
+### ⚡ Hiện Tại (UI LAYER 100% COMPLETE):
+
+| Thành Phần          | Trạng Thái                                |
+| ------------------- | ----------------------------------------- |
+| Architecture        | ✅ Server-Client Separation OK            |
+| AppConfig           | ✅ Loads from .env                        |
+| Datasources         | ✅ HTTP + Firestore implemented           |
+| Models              | ✅ Better JSON parsing                    |
+| Repositories        | ✅ Wired all datasources                  |
+| **UI Screens (11)** | ✅ **ALL COMPLETE + ANIMATED + TESTED**   |
+| **App Running**     | ✅ **Full navigation working + verified** |
+| **Router Config**   | ✅ **Top-level routes (no nesting)**      |
+| **Phase Tiếp Theo** | 🟡 **Phase 2 — Auth Implementation**      |
+
+---
+
+### ✅ Đã Hoàn Thành (Session 10):
+
+**1. Google Sign-In Buttons** ✅
+
+- Added "Continue with Google" button to LoginScreen
+- Added "Continue with Google" button to RegisterScreen
+- Custom Google G icon with blue color (#4285F4)
+- White background with subtle border and shadow
+- Divider "or" between email/password buttons and Google button
+
+**2. RegisterScreen - Fit in One Screen** ✅
+
+- Used LayoutBuilder + ConstrainedBox + IntrinsicHeight
+- Reduced spacing between elements (14→10, 28→16, etc.)
+- No scrolling required - fits in one screen
+- Build verified: `flutter build apk --debug` ✅
+
+**3. ForgotPasswordScreen - New Screen** ✅
+
+- Created new screen: `/forgot-password`
+- Theme: Green gradient (#2E7D32 → #43A047)
+- Features:
+  - Lock reset icon with gradient
+  - Email input with focus animation
+  - "Send Reset Link" button with gradient
+  - Success state after email sent (check icon)
+  - "Sign In" link to go back
+  - "Contact Support" link
+- Route added to app_router.dart
+- Connected from LoginScreen "Forgot Password?" link
+
+---
+
+## Session 9 ✅ XONG — Register Screen Back Button Removal (Apr 18, 2026)
 
 ### ⚡ Hiện Tại (UI LAYER 100% COMPLETE):
 

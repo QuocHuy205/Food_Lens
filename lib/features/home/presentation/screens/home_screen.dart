@@ -435,8 +435,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
         border: Border(
-          top: BorderSide(color: AppColors.border, width: 1),
+          top: BorderSide(color: AppColors.border.withOpacity(0.5), width: 0.5),
         ),
       ),
       child: BottomNavigationBar(
@@ -445,29 +452,38 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textSecondary,
+        selectedFontSize: 11,
+        unselectedFontSize: 11,
+        iconSize: 24,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.camera_alt),
+            icon: Icon(Icons.camera_alt_outlined),
+            activeIcon: Icon(Icons.camera_alt),
             label: 'Scan',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.history),
+            icon: Icon(Icons.history_outlined),
+            activeIcon: Icon(Icons.history),
             label: 'History',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
+            icon: Icon(Icons.bar_chart_outlined),
+            activeIcon: Icon(Icons.bar_chart),
             label: 'Stats',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
             label: 'Profile',
           ),
         ],
         onTap: (index) {
+          // Sử dụng replace để tránh tạo thêm route mới
           switch (index) {
             case 0:
               context.go('/home');
