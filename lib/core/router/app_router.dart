@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,6 +31,26 @@ class AppRoutes {
   static const String editProfile = '/edit-profile';
   static const String history = '/history';
   static const String cloudinaryTest = '/cloudinary-test'; // For testing upload
+}
+
+class AuthRouterNotifier extends ChangeNotifier {
+  User? currentUser;
+  final StreamSubscription<User?> _subscription;
+
+  AuthRouterNotifier(FirebaseAuth auth)
+      : currentUser = auth.currentUser,
+        _subscription = auth.authStateChanges().listen((user) {}) {
+    _subscription.onData((user) {
+      currentUser = user;
+      notifyListeners();
+    });
+  }
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -67,18 +90,30 @@ CustomTransitionPage<T> _buildSmoothPage<T>({
   );
 }
 
+NoTransitionPage<T> _buildNoTransitionPage<T>({
+  required BuildContext context,
+  required GoRouterState state,
+  required Widget child,
+}) {
+  return NoTransitionPage<T>(
+    key: state.pageKey,
+    child: child,
+  );
+}
+
 final appRouterProvider = Provider((ref) {
-  // TODO: Wire auth state from authViewModelProvider
-  // final authState = ref.watch(authViewModelProvider);
+  final firebaseAuth = FirebaseAuth.instance;
+  final authNotifier = AuthRouterNotifier(firebaseAuth);
+  ref.onDispose(authNotifier.dispose);
 
   return GoRouter(
-    initialLocation: AppRoutes.splash, // START: Splash screen
-
+    initialLocation: AppRoutes.splash,
+    refreshListenable: authNotifier,
     routes: [
       // ── Auth Routes ─────────────────────────────────
       GoRoute(
         path: AppRoutes.splash,
-        pageBuilder: (context, state) => _buildSmoothPage(
+        pageBuilder: (context, state) => _buildNoTransitionPage(
           context: context,
           state: state,
           child: const SplashScreen(),
@@ -86,7 +121,7 @@ final appRouterProvider = Provider((ref) {
       ),
       GoRoute(
         path: AppRoutes.login,
-        pageBuilder: (context, state) => _buildSmoothPage(
+        pageBuilder: (context, state) => _buildNoTransitionPage(
           context: context,
           state: state,
           child: const LoginScreen(),
@@ -94,7 +129,7 @@ final appRouterProvider = Provider((ref) {
       ),
       GoRoute(
         path: AppRoutes.register,
-        pageBuilder: (context, state) => _buildSmoothPage(
+        pageBuilder: (context, state) => _buildNoTransitionPage(
           context: context,
           state: state,
           child: const RegisterScreen(),
@@ -102,7 +137,7 @@ final appRouterProvider = Provider((ref) {
       ),
       GoRoute(
         path: AppRoutes.forgotPassword,
-        pageBuilder: (context, state) => _buildSmoothPage(
+        pageBuilder: (context, state) => _buildNoTransitionPage(
           context: context,
           state: state,
           child: const ForgotPasswordScreen(),
@@ -168,17 +203,28 @@ final appRouterProvider = Provider((ref) {
       ),
     ],
     redirect: (context, state) {
-      // FOR TESTING: Log all route transitions
       debugPrint('🔗 Router redirect - Current path: ${state.uri.path}');
 
-      // TODO: Implement auth guard
-      // if (authState.isLoading) return AppRoutes.splash;
-      // if (authState.user == null && state.location != AppRoutes.login && state.location != AppRoutes.register) {
-      //   return AppRoutes.login;
-      // }
-      // if (authState.user != null && state.location == AppRoutes.login) {
-      //   return AppRoutes.home;
-      // }
+      final isLoggedIn = authNotifier.currentUser != null;
+      final currentPath = state.uri.path;
+
+      // Splash is controlled by SplashScreen timer/navigation.
+      if (currentPath == AppRoutes.splash) {
+        return null;
+      }
+
+      final isAuthPage = currentPath == AppRoutes.login ||
+          currentPath == AppRoutes.register ||
+          currentPath == AppRoutes.forgotPassword;
+
+      if (!isLoggedIn && !isAuthPage) {
+        return AppRoutes.login;
+      }
+
+      if (isLoggedIn && (currentPath == AppRoutes.splash || isAuthPage)) {
+        return AppRoutes.home;
+      }
+
       return null;
     },
   );

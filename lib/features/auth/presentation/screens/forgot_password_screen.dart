@@ -5,7 +5,10 @@
 // ============================================================
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../providers/auth_provider.dart';
 
 class AppColors {
   static const Color primary = Color(0xFF2E7D32);
@@ -21,14 +24,15 @@ class AppColors {
   static const Color warning = Color(0xFFFFA000);
 }
 
-class ForgotPasswordScreen extends StatefulWidget {
+class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
+class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen>
     with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
@@ -110,15 +114,32 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     await _buttonController.forward();
     await _buttonController.reverse();
 
-    setState(() => _isLoading = true);
-
-    // Simulate API call
-    await Future.delayed(const Duration(milliseconds: 1500));
-
     setState(() {
-      _isLoading = false;
-      _emailSent = true;
+      _isLoading = true;
     });
+
+    // Get AuthViewModel from provider
+    final authViewModel = ref.read(authViewModelProvider.notifier);
+    final email = _emailController.text.trim();
+
+    // Call forgot password
+    await authViewModel.forgotPassword(email);
+
+    // Wait for state update
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    // Check result using mounted check
+    if (!mounted) return;
+
+    final authState = ref.read(authViewModelProvider);
+
+    setState(() => _isLoading = false);
+
+    if (authState.errorMessage == null && authState.forgotPasswordSuccess) {
+      setState(() {
+        _emailSent = true;
+      });
+    }
   }
 
   @override
@@ -216,7 +237,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: AppColors.success.withOpacity(0.1),
+              color: AppColors.success.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -322,7 +343,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
             decoration: InputDecoration(
               hintText: 'john@example.com',
               hintStyle: TextStyle(
-                color: AppColors.textSecondary.withOpacity(0.6),
+                color: AppColors.textSecondary.withValues(alpha: 0.6),
                 fontSize: 14,
               ),
               prefixIcon: const Icon(
@@ -377,7 +398,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.4),
+                color: AppColors.primary.withValues(alpha: 0.4),
                 blurRadius: 12,
                 offset: const Offset(0, 6),
               ),

@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+
+import '../../../profile/domain/entities/user_profile.dart';
+import '../../../profile/presentation/providers/profile_provider.dart';
 
 // ── App Colors (shared constant) ─────────────────────────────
 class AppColors {
@@ -15,14 +21,15 @@ class AppColors {
   static const Color success = Color(0xFF43A047);
 }
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with TickerProviderStateMixin {
   late AnimationController _pageEnterController;
   late AnimationController _progressController;
   late Animation<Offset> _slideAnimation;
@@ -35,6 +42,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _setupAnimations();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _pageEnterController.forward();
+
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        ref.read(profileViewModelProvider.notifier).loadProfile(uid);
+      }
     });
   }
 
@@ -79,13 +91,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final profileState = ref.watch(profileViewModelProvider);
+    final profile = profileState.profile.valueOrNull;
+
     return SlideTransition(
       position: _slideAnimation,
       child: FadeTransition(
         opacity: _fadeAnimation,
         child: Scaffold(
           backgroundColor: AppColors.background,
-          appBar: _buildAppBar(),
+          appBar: _buildAppBar(profile),
           body: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
@@ -93,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               children: [
                 const SizedBox(height: 16),
                 // ── Greeting Card ──────────────────────────
-                _buildGreetingCard(),
+                _buildGreetingCard(profile),
                 const SizedBox(height: 20),
                 // ── Calorie Summary Card ───────────────────
                 _buildCalorieSummaryCard(),
@@ -111,12 +126,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget _buildAppBar(UserProfile? profile) {
+    final initials = _resolveDisplayName(profile).isNotEmpty
+        ? _resolveDisplayName(profile).substring(0, 1).toUpperCase()
+        : 'U';
+
     return AppBar(
       backgroundColor: AppColors.primary,
       elevation: 0,
       title: const Text(
-        'Food Lens AI',
+        'Food Lens',
         style: TextStyle(
           color: Colors.white,
           fontSize: 18,
@@ -127,16 +146,45 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       actions: [
         Padding(
           padding: const EdgeInsets.all(12),
-          child: CircleAvatar(
-            backgroundColor: Colors.white.withOpacity(0.2),
-            child: const Icon(Icons.person, color: Colors.white, size: 20),
+          child: GestureDetector(
+            onTap: () => context.go('/profile'),
+            child: CircleAvatar(
+              backgroundColor: Colors.white.withOpacity(0.2),
+              child: ClipOval(
+                child:
+                    profile?.photoUrl != null && profile!.photoUrl!.isNotEmpty
+                        ? Image.network(
+                            profile.photoUrl!,
+                            width: 34,
+                            height: 34,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Text(
+                              initials,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          )
+                        : Text(
+                            initials,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+              ),
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildGreetingCard() {
+  Widget _buildGreetingCard(UserProfile? profile) {
+    final displayName = _resolveDisplayName(profile);
+    final formattedDate = DateFormat('d MMMM y').format(DateTime.now());
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -144,34 +192,55 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border, width: 1),
       ),
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Hi, Alex! 👋',
-                style: TextStyle(
+                'Hi, $displayName! 👋',
+                style: const TextStyle(
                   color: AppColors.textPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               Text(
-                'Today • 14 April 2026',
-                style: TextStyle(
+                'Today • $formattedDate',
+                style: const TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 12,
                 ),
               ),
             ],
           ),
-          Icon(Icons.calendar_today, color: AppColors.textSecondary, size: 24),
+          const Icon(Icons.calendar_today,
+              color: AppColors.textSecondary, size: 24),
         ],
       ),
     );
+  }
+
+  String _resolveDisplayName(UserProfile? profile) {
+    final profileName = profile?.name.trim();
+    if (profileName != null && profileName.isNotEmpty) {
+      return profileName.split(' ').first;
+    }
+
+    final authUser = FirebaseAuth.instance.currentUser;
+    final authName = authUser?.displayName?.trim();
+    if (authName != null && authName.isNotEmpty) {
+      return authName.split(' ').first;
+    }
+
+    final email = authUser?.email;
+    if (email != null && email.isNotEmpty) {
+      return email.split('@').first;
+    }
+
+    return 'User';
   }
 
   Widget _buildCalorieSummaryCard() {

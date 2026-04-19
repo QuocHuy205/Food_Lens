@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../domain/entities/scan_result.dart';
-import '../../../domain/entities/scan_history.dart';
+import '../../domain/entities/scan_result.dart';
+import '../../domain/entities/scan_history.dart';
 
 @immutable
 class ScanState {

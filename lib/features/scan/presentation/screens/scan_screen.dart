@@ -198,11 +198,20 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
           fontWeight: FontWeight.w600,
         ),
       ),
-      leading: GestureDetector(
-        onTap: () => Navigator.maybePop(context),
-        child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+      leading: IconButton(
+        onPressed: _handleBack,
+        icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
       ),
     );
+  }
+
+  void _handleBack() {
+    if (Navigator.of(context).canPop()) {
+      context.pop();
+      return;
+    }
+
+    context.go('/home');
   }
 
   Widget _buildActionButton({

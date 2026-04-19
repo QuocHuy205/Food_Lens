@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import '../../../../core/config/app_config.dart';
-import '../../../../core/errors/failure.dart';
 
 abstract class AiRemoteDatasource {
   /// Gửi image URL tới AI server, nhận kết quả phân tích

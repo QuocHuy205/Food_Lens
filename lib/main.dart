@@ -50,7 +50,7 @@ class MyApp extends ConsumerWidget {
     final goRouter = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
-      title: 'Food Lens AI',
+      title: 'Food Lens',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
@@ -58,9 +58,19 @@ class MyApp extends ConsumerWidget {
       routerConfig: goRouter,
       // Đảm bảo màu nền nhất quán
       builder: (context, child) {
-        return Container(
-          color: const Color(0xFFF5F5F5),
-          child: child,
+        return GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () {
+            final currentFocus = FocusScope.of(context);
+            if (!currentFocus.hasPrimaryFocus &&
+                currentFocus.focusedChild != null) {
+              FocusManager.instance.primaryFocus?.unfocus();
+            }
+          },
+          child: Container(
+            color: const Color(0xFFF5F5F5),
+            child: child ?? const SizedBox.shrink(),
+          ),
         );
       },
     );

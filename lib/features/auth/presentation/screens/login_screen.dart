@@ -5,7 +5,11 @@
 // ============================================================
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../../core/widgets/app_logo.dart';
+import '../providers/auth_provider.dart';
 
 // ── App Colors (shared constant) ─────────────────────────────
 class AppColors {
@@ -20,14 +24,14 @@ class AppColors {
   static const Color border = Color(0xFFE0E0E0);
 }
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
+class _LoginScreenState extends ConsumerState<LoginScreen>
     with TickerProviderStateMixin {
   // ── Form ──────────────────────────────────────────────────
   final _formKey = GlobalKey<FormState>();
@@ -158,24 +162,70 @@ class _LoginScreenState extends State<LoginScreen>
     await _buttonController.forward();
     await _buttonController.reverse();
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
-    // Simulate API call
-    await Future.delayed(const Duration(milliseconds: 1500));
-
-    // TODO: Replace with real auth
+    // Get AuthViewModel from provider
+    final authViewModel = ref.read(authViewModelProvider.notifier);
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    if (email == 'hello@foodlens.ai' && password == 'wrongpass') {
+    // Call login
+    await authViewModel.login(email, password);
+
+    // Wait for state update - give more time for Firebase
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Check result using mounted check
+    if (!mounted) return;
+
+    final authState = ref.read(authViewModelProvider);
+
+    setState(() => _isLoading = false);
+
+    // Debug: print state
+    debugPrint(
+        'AuthState: isLoading=${authState.isLoading}, error=${authState.errorMessage}, user=${authState.user}');
+
+    if (authState.errorMessage != null) {
       setState(() {
-        _isLoading = false;
-        _errorMessage = 'Email hoặc mật khẩu sai';
+        _errorMessage = authState.errorMessage;
       });
       _errorShakeController.forward(from: 0);
-    } else {
-      setState(() => _isLoading = false);
-      // Navigator.pushReplacementNamed(context, '/home');
+    } else if (authState.user.value != null) {
+      // Navigate to home on success
+      if (mounted) {
+        context.go('/home');
+      }
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final authViewModel = ref.read(authViewModelProvider.notifier);
+    await authViewModel.signInWithGoogle();
+
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (!mounted) return;
+
+    final authState = ref.read(authViewModelProvider);
+    setState(() => _isLoading = false);
+
+    if (authState.errorMessage != null) {
+      setState(() => _errorMessage = authState.errorMessage);
+      _errorShakeController.forward(from: 0);
+      return;
+    }
+
+    if (authState.user.value != null) {
+      context.go('/home');
     }
   }
 
@@ -271,30 +321,10 @@ class _LoginScreenState extends State<LoginScreen>
   Widget _buildHeader() {
     return Column(
       children: [
-        // Logo icon
-        Container(
-          width: 72,
-          height: 72,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
-            ),
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withOpacity(0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.restaurant,
-            color: Colors.white,
-            size: 36,
-          ),
+        const AppLogo(
+          size: 72,
+          iconSize: 36,
+          borderRadius: BorderRadius.all(Radius.circular(18)),
         ),
 
         const SizedBox(height: 20),
@@ -351,7 +381,7 @@ class _LoginScreenState extends State<LoginScreen>
             decoration: InputDecoration(
               hintText: 'hello@foodlens.ai',
               hintStyle: TextStyle(
-                color: AppColors.textSecondary.withOpacity(0.6),
+                color: AppColors.textSecondary.withValues(alpha: 0.6),
                 fontSize: 14,
               ),
               prefixIcon: const Icon(
@@ -422,7 +452,7 @@ class _LoginScreenState extends State<LoginScreen>
             decoration: InputDecoration(
               hintText: '••••••••',
               hintStyle: TextStyle(
-                color: AppColors.textSecondary.withOpacity(0.6),
+                color: AppColors.textSecondary.withValues(alpha: 0.6),
                 fontSize: 18,
                 letterSpacing: 2,
               ),
@@ -543,7 +573,7 @@ class _LoginScreenState extends State<LoginScreen>
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.4),
+                color: AppColors.primary.withValues(alpha: 0.4),
                 blurRadius: 12,
                 offset: const Offset(0, 6),
               ),
@@ -577,20 +607,7 @@ class _LoginScreenState extends State<LoginScreen>
   // ── Google Sign-In Button ─────────────────────────────────
   Widget _buildGoogleButton() {
     return GestureDetector(
-      onTap: () {
-        // TODO: Implement Google Sign-In
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Google Sign-In coming soon!'),
-            backgroundColor: AppColors.primary,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
-      },
+      onTap: _isLoading ? null : _handleGoogleSignIn,
       child: Container(
         height: 52,
         decoration: BoxDecoration(
@@ -602,49 +619,60 @@ class _LoginScreenState extends State<LoginScreen>
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Google Icon
-            Container(
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Stack(
-                alignment: Alignment.center,
+        child: _isLoading
+            ? const Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    color: AppColors.primary,
+                    strokeWidth: 2.5,
+                  ),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // G icon (simplified)
+                  // Google Icon
+                  Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // G icon (simplified)
+                        const Text(
+                          'G',
+                          style: TextStyle(
+                            color: Color(0xFF4285F4),
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   const Text(
-                    'G',
+                    'Continue with Google',
                     style: TextStyle(
-                      color: Color(0xFF4285F4),
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Continue with Google',
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

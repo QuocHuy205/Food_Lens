@@ -27,6 +27,7 @@ dependencies:
   firebase_core: ^3.15.2
   firebase_auth: ^5.3.1
   cloud_firestore: ^5.4.4
+  google_sign_in: ^6.2.1
 
   # 📡 NETWORK (gọi AI API)
   dio: ^5.7.0

@@ -5,7 +5,11 @@
 // ============================================================
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../../core/widgets/app_logo.dart';
+import '../providers/auth_provider.dart';
 
 // ── App Colors (copy from login_screen.dart or shared file) ──
 class AppColors {
@@ -22,14 +26,14 @@ class AppColors {
   static const Color warning = Color(0xFFFFA000);
 }
 
-class RegisterScreen extends StatefulWidget {
+class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen>
+class _RegisterScreenState extends ConsumerState<RegisterScreen>
     with TickerProviderStateMixin {
   // ── Form ──────────────────────────────────────────────────
   final _formKey = GlobalKey<FormState>();
@@ -63,7 +67,6 @@ class _RegisterScreenState extends State<RegisterScreen>
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<double> _buttonScale;
-  late Animation<double> _strengthWidth;
   late Animation<double> _checkboxScale;
   late Animation<Color?> _nameBorderColor;
   late Animation<Color?> _emailBorderColor;
@@ -112,9 +115,6 @@ class _RegisterScreenState extends State<RegisterScreen>
     _strengthController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
-    );
-    _strengthWidth = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _strengthController, curve: Curves.easeOut),
     );
 
     // Checkbox animation: scale pop
@@ -228,14 +228,104 @@ class _RegisterScreenState extends State<RegisterScreen>
     await _buttonController.forward();
     await _buttonController.reverse();
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+    });
 
-    // Simulate API call
-    await Future.delayed(const Duration(milliseconds: 1500));
+    // Get AuthViewModel from provider
+    final authViewModel = ref.read(authViewModelProvider.notifier);
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final name = _nameController.text.trim();
+
+    // Call register
+    await authViewModel.register(email, password, name);
+
+    // Wait for state update - give more time for Firebase
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Check result using mounted check
+    if (!mounted) return;
+
+    final authState = ref.read(authViewModelProvider);
 
     setState(() => _isLoading = false);
-    // TODO: Real register logic
-    // Navigator.pushReplacementNamed(context, '/home');
+
+    // Debug: print state
+    debugPrint(
+        'AuthState: isLoading=${authState.isLoading}, error=${authState.errorMessage}, user=${authState.user}');
+
+    if (authState.errorMessage != null) {
+      _showSnackBar(authState.errorMessage!, isError: true);
+    } else if (authState.user.value != null) {
+      // Show loading first, then success, then auto navigate to login
+      _showLoadingAndSuccess();
+    } else {
+      // If no error and no user, still loading - wait more
+      _showSnackBar('Vui lòng chờ...', isError: false);
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final authViewModel = ref.read(authViewModelProvider.notifier);
+    await authViewModel.signInWithGoogle();
+
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (!mounted) return;
+
+    final authState = ref.read(authViewModelProvider);
+    setState(() => _isLoading = false);
+
+    if (authState.errorMessage != null) {
+      _showSnackBar(authState.errorMessage!, isError: true);
+      return;
+    }
+
+    if (authState.user.value != null) {
+      _showSnackBar('Đăng nhập Google thành công', isError: false);
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (mounted) {
+          context.go('/home');
+        }
+      });
+    }
+  }
+
+  void _showLoadingAndSuccess() {
+    // Show success snackbar first
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white, size: 20),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Đăng ký thành công!',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(milliseconds: 1000),
+      ),
+    );
+
+    // Auto navigate to login after 1.5 seconds
+    Future.delayed(const Duration(milliseconds: 1000), () {
+      if (mounted) {
+        context.go('/login');
+      }
+    });
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
@@ -275,13 +365,13 @@ class _RegisterScreenState extends State<RegisterScreen>
       case 0:
         return '';
       case 1:
-        return 'Yếu';
+        return 'Weak';
       case 2:
-        return 'Trung bình';
+        return 'Fair';
       case 3:
-        return 'Khá mạnh';
+        return 'Good';
       case 4:
-        return 'Mạnh';
+        return 'Strong';
       default:
         return '';
     }
@@ -316,141 +406,128 @@ class _RegisterScreenState extends State<RegisterScreen>
         opacity: _fadeAnimation,
         child: Scaffold(
           backgroundColor: AppColors.background,
+          resizeToAvoidBottomInset: false,
           appBar: _buildAppBar(),
           body: SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
-                  child: ConstrainedBox(
-                    constraints:
-                        BoxConstraints(minHeight: constraints.maxHeight),
-                    child: IntrinsicHeight(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              const SizedBox(height: 4),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 4),
 
-                              // ── Header ────────────────────────────
-                              _buildHeader(),
+                    // ── Header ────────────────────────────
+                    _buildHeader(),
 
-                              const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                              // ── Full Name ─────────────────────────
-                              _buildTextField(
-                                label: 'FULL NAME',
-                                hint: 'John Doe',
-                                controller: _nameController,
-                                focusNode: _nameFocus,
-                                borderColor: _nameBorderColor,
-                                focusController: _nameFocusController,
-                                prefixIcon: Icons.person_outline,
-                                validator: (v) {
-                                  if (v == null || v.isEmpty)
-                                    return 'Nhập họ tên';
-                                  if (v.length < 3) return 'Ít nhất 3 ký tự';
-                                  return null;
-                                },
-                              ),
+                    // ── Full Name ─────────────────────────
+                    _buildTextField(
+                      label: 'FULL NAME',
+                      hint: 'John Doe',
+                      controller: _nameController,
+                      focusNode: _nameFocus,
+                      borderColor: _nameBorderColor,
+                      focusController: _nameFocusController,
+                      prefixIcon: Icons.person_outline,
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Nhập họ tên';
+                        if (v.length < 3) return 'Ít nhất 3 ký tự';
+                        return null;
+                      },
+                    ),
 
-                              const SizedBox(height: 10),
+                    const SizedBox(height: 10),
 
-                              // ── Email ─────────────────────────────
-                              _buildTextField(
-                                label: 'EMAIL ADDRESS',
-                                hint: 'john@example.com',
-                                controller: _emailController,
-                                focusNode: _emailFocus,
-                                borderColor: _emailBorderColor,
-                                focusController: _emailFocusController,
-                                prefixIcon: Icons.mail_outline,
-                                keyboardType: TextInputType.emailAddress,
-                                validator: (v) {
-                                  if (v == null || v.isEmpty)
-                                    return 'Nhập email';
-                                  if (!RegExp(
-                                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                                      .hasMatch(v)) return 'Email không hợp lệ';
-                                  return null;
-                                },
-                              ),
+                    // ── Email ─────────────────────────────
+                    _buildTextField(
+                      label: 'EMAIL ADDRESS',
+                      hint: 'john@example.com',
+                      controller: _emailController,
+                      focusNode: _emailFocus,
+                      borderColor: _emailBorderColor,
+                      focusController: _emailFocusController,
+                      prefixIcon: Icons.mail_outline,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Nhập email';
+                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                            .hasMatch(v)) {
+                          return 'Email không hợp lệ';
+                        }
+                        return null;
+                      },
+                    ),
 
-                              const SizedBox(height: 10),
+                    const SizedBox(height: 10),
 
-                              // ── Password ──────────────────────────
-                              _buildPasswordFieldWithStrength(),
+                    // ── Password ──────────────────────────
+                    _buildPasswordFieldWithStrength(),
 
-                              const SizedBox(height: 10),
+                    const SizedBox(height: 10),
 
-                              // ── Confirm Password ──────────────────
-                              _buildTextField(
-                                label: 'CONFIRM PASSWORD',
-                                hint: '••••••••',
-                                controller: _confirmPasswordController,
-                                focusNode: _confirmFocus,
-                                borderColor: _confirmBorderColor,
-                                focusController: _confirmFocusController,
-                                prefixIcon: Icons.lock_outline,
-                                obscureText: _obscureConfirm,
-                                suffixIcon: GestureDetector(
-                                  onTap: () => setState(
-                                      () => _obscureConfirm = !_obscureConfirm),
-                                  child: Icon(
-                                    _obscureConfirm
-                                        ? Icons.visibility_off_outlined
-                                        : Icons.visibility_outlined,
-                                    color: AppColors.textSecondary,
-                                    size: 20,
-                                  ),
-                                ),
-                                validator: (v) {
-                                  if (v == null || v.isEmpty)
-                                    return 'Xác nhận mật khẩu';
-                                  if (v != _passwordController.text) {
-                                    return 'Mật khẩu không khớp';
-                                  }
-                                  return null;
-                                },
-                              ),
-
-                              const SizedBox(height: 10),
-
-                              // ── Terms Checkbox ────────────────────
-                              _buildTermsCheckbox(),
-
-                              const SizedBox(height: 16),
-
-                              // ── Register Button ───────────────────
-                              _buildRegisterButton(),
-
-                              const SizedBox(height: 12),
-
-                              // ── Divider ────────────────────────────
-                              _buildDivider(),
-
-                              const SizedBox(height: 12),
-
-                              // ── Google Sign-In Button ─────────────
-                              _buildGoogleButton(),
-
-                              const SizedBox(height: 12),
-
-                              // ── Login Link ────────────────────────
-                              _buildLoginLink(),
-
-                              const SizedBox(height: 16),
-                            ],
-                          ),
+                    // ── Confirm Password ──────────────────
+                    _buildTextField(
+                      label: 'CONFIRM PASSWORD',
+                      hint: '••••••••',
+                      controller: _confirmPasswordController,
+                      focusNode: _confirmFocus,
+                      borderColor: _confirmBorderColor,
+                      focusController: _confirmFocusController,
+                      prefixIcon: Icons.lock_outline,
+                      obscureText: _obscureConfirm,
+                      hintFontSize: 18,
+                      suffixIcon: GestureDetector(
+                        onTap: () =>
+                            setState(() => _obscureConfirm = !_obscureConfirm),
+                        child: Icon(
+                          _obscureConfirm
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: AppColors.textSecondary,
+                          size: 20,
                         ),
                       ),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Xác nhận mật khẩu';
+                        if (v != _passwordController.text) {
+                          return 'Mật khẩu không khớp';
+                        }
+                        return null;
+                      },
                     ),
-                  ),
-                );
-              },
+
+                    const SizedBox(height: 10),
+
+                    // ── Terms Checkbox ────────────────────
+                    _buildTermsCheckbox(),
+
+                    const SizedBox(height: 16),
+
+                    // ── Register Button ───────────────────
+                    _buildRegisterButton(),
+
+                    const SizedBox(height: 12),
+
+                    // ── Divider ────────────────────────────
+                    _buildDivider(),
+
+                    const SizedBox(height: 12),
+
+                    // ── Google Sign-In Button ─────────────
+                    _buildGoogleButton(),
+
+                    const SizedBox(height: 12),
+
+                    // ── Login Link ────────────────────────
+                    _buildLoginLink(),
+
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -481,22 +558,17 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   Widget _buildHeader() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF2E7D32), Color(0xFF43A047)],
-            ),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: const Icon(Icons.restaurant, color: Colors.white, size: 28),
+        const AppLogo(
+          size: 72,
+          iconSize: 36,
+          borderRadius: BorderRadius.all(Radius.circular(18)),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         const Text(
           'Start your journey',
+          textAlign: TextAlign.center,
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: 24,
@@ -505,7 +577,8 @@ class _RegisterScreenState extends State<RegisterScreen>
         ),
         const SizedBox(height: 4),
         const Text(
-          'Join Food Lens AI to unlock personalized nutrition.',
+          'Join Food Lens to unlock personalized nutrition.',
+          textAlign: TextAlign.center,
           style: TextStyle(
             color: AppColors.textSecondary,
             fontSize: 13,
@@ -529,6 +602,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     bool obscureText = false,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
+    double hintFontSize = 14,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -570,8 +644,9 @@ class _RegisterScreenState extends State<RegisterScreen>
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(
-                color: AppColors.textSecondary.withOpacity(0.5),
-                fontSize: 14,
+                color: AppColors.textSecondary.withValues(alpha: 0.5),
+                fontSize: hintFontSize,
+                letterSpacing: hintFontSize > 14 ? 2 : 0,
               ),
               prefixIcon:
                   Icon(prefixIcon, color: AppColors.textSecondary, size: 20),
@@ -631,7 +706,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             decoration: InputDecoration(
               hintText: '••••••••',
               hintStyle: TextStyle(
-                color: AppColors.textSecondary.withOpacity(0.5),
+                color: AppColors.textSecondary.withValues(alpha: 0.5),
                 fontSize: 18,
                 letterSpacing: 2,
               ),
@@ -823,7 +898,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.35),
+                color: AppColors.primary.withValues(alpha: 0.35),
                 blurRadius: 12,
                 offset: const Offset(0, 6),
               ),
@@ -894,20 +969,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   // ── Google Sign-In Button ─────────────────────────────────
   Widget _buildGoogleButton() {
     return GestureDetector(
-      onTap: () {
-        // TODO: Implement Google Sign-In
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Google Sign-In coming soon!'),
-            backgroundColor: AppColors.primary,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
-      },
+      onTap: _isLoading ? null : _handleGoogleSignIn,
       child: Container(
         height: 52,
         decoration: BoxDecoration(
@@ -919,43 +981,54 @@ class _RegisterScreenState extends State<RegisterScreen>
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Google Icon
-            Container(
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Text(
-                'G',
-                style: TextStyle(
-                  color: Color(0xFF4285F4),
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+        child: _isLoading
+            ? const Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    color: AppColors.primary,
+                    strokeWidth: 2.5,
+                  ),
                 ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Google Icon
+                  Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'G',
+                      style: TextStyle(
+                        color: Color(0xFF4285F4),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Continue with Google',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Continue with Google',
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

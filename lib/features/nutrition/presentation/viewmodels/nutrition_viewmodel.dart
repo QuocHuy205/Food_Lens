@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../domain/entities/daily_log.dart';
+import '../../domain/entities/daily_log.dart';
 
 @immutable
 class NutritionState {

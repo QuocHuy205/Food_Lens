@@ -20,7 +20,7 @@ class AppConstants {
   static const String cloudinaryImageQuality = 'auto';
 
   // App Metadata
-  static const String appName = 'Food Lens AI';
+  static const String appName = 'Food Lens';
   static const String appVersion = '1.0.0';
 
   // Pagination

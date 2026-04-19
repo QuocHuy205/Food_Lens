@@ -1,5 +1,3 @@
-import 'package:mockito/mockito.dart';
-
 // TODO: Create mock repositories using mockito
 // Example:
 // class MockAuthRepository extends Mock implements AuthRepository {}

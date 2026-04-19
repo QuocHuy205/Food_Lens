@@ -1,23 +1,22 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:food_lens/core/theme/app_colors.dart';
 import 'package:food_lens/core/widgets/animated_widgets.dart';
 
-// ═══════════════════════════════════════════════════════════
-// PROFILE SCREEN — With animations
-// Refactored: Page enter + staggered content
-// ═══════════════════════════════════════════════════════════
+import '../../domain/entities/user_profile.dart';
+import '../providers/profile_provider.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen>
+class _ProfileScreenState extends ConsumerState<ProfileScreen>
     with TickerProviderStateMixin {
-  // ── Animation Controllers ──────────────────────────────────
   late AnimationController _pageEnterController;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
@@ -26,8 +25,13 @@ class _ProfileScreenState extends State<ProfileScreen>
   void initState() {
     super.initState();
     _setupAnimations();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _pageEnterController.forward();
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        ref.read(profileViewModelProvider.notifier).loadProfile(uid);
+      }
     });
   }
 
@@ -56,6 +60,8 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(profileViewModelProvider);
+
     return SlideTransition(
       position: _slideAnimation,
       child: FadeTransition(
@@ -63,86 +69,102 @@ class _ProfileScreenState extends State<ProfileScreen>
         child: Scaffold(
           backgroundColor: AppColors.background,
           appBar: _buildAppBar(),
-          body: SingleChildScrollView(
-            child: Column(
-              children: [
-                // ── Profile Header ──────────────────────
-                FadeInWidget(
-                  delay: const Duration(milliseconds: 100),
-                  child: _buildProfileHeader(),
-                ),
-                const SizedBox(height: 16),
-                // ── Stats Cards ──────────────────────────
-                FadeInWidget(
-                  delay: const Duration(milliseconds: 200),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _buildStatCard('BMI', '24.5', 'Normal weight'),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildStatCard('TDEE', '2,700', 'kcal/day'),
-                        ),
-                      ],
+          body: state.profile.when(
+            data: (profile) {
+              if (profile == null) {
+                return const Center(
+                  child: Text(
+                    'Không có dữ liệu hồ sơ',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                );
+              }
+
+              return SingleChildScrollView(
+                child: Column(
+                  children: [
+                    FadeInWidget(
+                      delay: const Duration(milliseconds: 100),
+                      child: _buildProfileHeader(profile),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // ── Settings List ───────────────────────
-                FadeInWidget(
-                  delay: const Duration(milliseconds: 300),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      children: [
-                        _buildSettingsItem(
-                          Icons.edit,
-                          'Edit Profile',
-                          'Update personal information',
-                          onTap: () => context.go('/profile/edit'),
+                    const SizedBox(height: 16),
+                    FadeInWidget(
+                      delay: const Duration(milliseconds: 200),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _buildStatCard(
+                                'BMI',
+                                _calculateBmi(profile).toStringAsFixed(1),
+                                _bmiStatus(_calculateBmi(profile)),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildStatCard(
+                                'TDEE',
+                                _calculateTdee(profile).toStringAsFixed(0),
+                                'kcal/day',
+                              ),
+                            ),
+                          ],
                         ),
-                        _buildSettingsItem(
-                          Icons.notifications,
-                          'Notifications',
-                          'Manage notification preferences',
-                          onTap: () {},
-                        ),
-                        _buildSettingsItem(
-                          Icons.straighten,
-                          'Units',
-                          'Switch between kg/lb, cm/in',
-                          onTap: () {},
-                        ),
-                        _buildSettingsItem(
-                          Icons.privacy_tip,
-                          'Privacy & Security',
-                          'Manage your account security',
-                          onTap: () {},
-                        ),
-                        _buildSettingsItem(
-                          Icons.help,
-                          'Help & Support',
-                          'Get help or report an issue',
-                          onTap: () {},
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    FadeInWidget(
+                      delay: const Duration(milliseconds: 300),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          children: [
+                            _buildSettingsItem(
+                              Icons.edit,
+                              'Edit Profile',
+                              'Update personal information',
+                              onTap: () => context.go('/edit-profile'),
+                            ),
+                            _buildSettingsItem(
+                              Icons.monitor_weight_outlined,
+                              'Goal',
+                              profile.goal,
+                              onTap: () => context.go('/edit-profile'),
+                            ),
+                            _buildSettingsItem(
+                              Icons.directions_run,
+                              'Activity Level',
+                              profile.activityLevel,
+                              onTap: () => context.go('/edit-profile'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    FadeInWidget(
+                      delay: const Duration(milliseconds: 400),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: _buildLogoutButton(),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                // ── Logout Button ───────────────────────
-                FadeInWidget(
-                  delay: const Duration(milliseconds: 400),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: _buildLogoutButton(),
-                  ),
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  error.toString(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.error),
                 ),
-                const SizedBox(height: 24),
-              ],
+              ),
             ),
           ),
           bottomNavigationBar: _buildBottomNav(context),
@@ -151,14 +173,19 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildProfileHeader(UserProfile profile) {
+    final initials = profile.name.trim().isNotEmpty
+        ? profile.name.trim().substring(0, 1).toUpperCase()
+        : 'U';
+
+    final hasAvatar = profile.photoUrl != null && profile.photoUrl!.isNotEmpty;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       color: AppColors.surface,
       child: Column(
         children: [
-          // Avatar with gradient background
           Container(
             width: 88,
             height: 88,
@@ -166,30 +193,48 @@ class _ProfileScreenState extends State<ProfileScreen>
               gradient: AppColors.primaryGradient,
               borderRadius: BorderRadius.circular(44),
             ),
-            child: const Center(
-              child: Text(
-                'J',
-                style: TextStyle(
-                  color: AppColors.white,
-                  fontSize: 40,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(44),
+              child: hasAvatar
+                  ? Image.network(
+                      profile.photoUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Center(
+                        child: Text(
+                          initials,
+                          style: const TextStyle(
+                            color: AppColors.white,
+                            fontSize: 40,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Center(
+                      child: Text(
+                        initials,
+                        style: const TextStyle(
+                          color: AppColors.white,
+                          fontSize: 40,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'John Doe',
-            style: TextStyle(
+          Text(
+            profile.name,
+            style: const TextStyle(
               color: AppColors.textPrimary,
               fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'john.doe@example.com',
-            style: TextStyle(
+          Text(
+            profile.email,
+            style: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 12,
             ),
@@ -275,7 +320,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: AppColors.primary, size: 20),
@@ -304,46 +349,20 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // TODO: Perform logout
-              context.go('/login');
-            },
-            child: const Text(
-              'Logout',
-              style: TextStyle(color: AppColors.error),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildBottomNav(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
         ],
         border: Border(
-          top: BorderSide(color: AppColors.border.withOpacity(0.5), width: 0.5),
+          top: BorderSide(
+              color: AppColors.border.withValues(alpha: 0.5), width: 0.5),
         ),
       ),
       child: BottomNavigationBar(
@@ -408,12 +427,17 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Widget _buildLogoutButton() {
     return GestureDetector(
-      onTap: () => _showLogoutDialog(context),
+      onTap: () async {
+        await FirebaseAuth.instance.signOut();
+        if (mounted) {
+          context.go('/login');
+        }
+      },
       child: Container(
         width: double.infinity,
         height: 52,
         decoration: BoxDecoration(
-          color: AppColors.error.withOpacity(0.1),
+          color: AppColors.error.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.error),
         ),
@@ -429,5 +453,34 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
       ),
     );
+  }
+
+  double _calculateBmi(UserProfile profile) {
+    if (profile.height <= 0) return 0;
+    return profile.weight / ((profile.height / 100) * (profile.height / 100));
+  }
+
+  String _bmiStatus(double bmi) {
+    if (bmi < 18.5) return 'Underweight';
+    if (bmi < 25) return 'Normal';
+    if (bmi < 30) return 'Overweight';
+    return 'Obese';
+  }
+
+  double _calculateTdee(UserProfile profile) {
+    final base = profile.gender == 'Male'
+        ? 10 * profile.weight + 6.25 * profile.height - 5 * profile.age + 5
+        : 10 * profile.weight + 6.25 * profile.height - 5 * profile.age - 161;
+
+    final multiplier = switch (profile.activityLevel) {
+      'Sedentary' => 1.2,
+      'Light' => 1.375,
+      'Moderate' => 1.55,
+      'Active' => 1.725,
+      'Very Active' => 1.9,
+      _ => 1.375,
+    };
+
+    return base * multiplier;
   }
 }
