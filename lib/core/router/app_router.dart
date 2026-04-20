@@ -15,6 +15,8 @@ import 'package:food_lens/features/scan/presentation/screens/scan_screen.dart';
 import 'package:food_lens/features/nutrition/presentation/screens/stats_screen.dart';
 import 'package:food_lens/features/profile/presentation/screens/profile_screen.dart';
 import 'package:food_lens/features/profile/presentation/screens/edit_profile_screen.dart';
+import 'package:food_lens/features/profile/presentation/screens/settings_screen.dart';
+import 'package:food_lens/features/profile/presentation/screens/change_password_screen.dart';
 import 'package:food_lens/features/history/presentation/screens/history_screen.dart';
 import 'package:food_lens/test/cloudinary_test.dart';
 
@@ -29,6 +31,8 @@ class AppRoutes {
   static const String stats = '/stats';
   static const String profile = '/profile';
   static const String editProfile = '/edit-profile';
+  static const String settings = '/settings';
+  static const String changePassword = '/change-password';
   static const String history = '/history';
   static const String cloudinaryTest = '/cloudinary-test'; // For testing upload
 }
@@ -81,7 +85,7 @@ CustomTransitionPage<T> _buildSmoothPage<T>({
         child: ScaleTransition(
           scale: Tween<double>(begin: 0.98, end: 1.0).animate(curvedAnimation),
           child: Container(
-            color: const Color(0xFFF5F5F5), // AppColors.background
+            color: Theme.of(context).scaffoldBackgroundColor,
             child: child,
           ),
         ),
@@ -190,6 +194,22 @@ final appRouterProvider = Provider((ref) {
           context: context,
           state: state,
           child: const EditProfileScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.settings,
+        pageBuilder: (context, state) => _buildSmoothPage(
+          context: context,
+          state: state,
+          child: const SettingsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.changePassword,
+        pageBuilder: (context, state) => _buildSmoothPage(
+          context: context,
+          state: state,
+          child: const ChangePasswordScreen(),
         ),
       ),
       // ── Test Route ──────────────────────────────────

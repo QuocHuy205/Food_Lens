@@ -1,17 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-// ── App Colors ─────────────────────────────────────────────
-class AppColors {
-  static const Color primary = Color(0xFF2E7D32);
-  static const Color primaryDark = Color(0xFF1B5E20);
-  static const Color accent = Color(0xFFFF6F00);
-  static const Color background = Color(0xFFF5F5F5);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color border = Color(0xFFE0E0E0);
-}
+import 'package:food_lens/l10n/app_localizations.dart';
+import 'package:food_lens/core/theme/app_colors.dart';
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -76,12 +66,16 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final mutedText = onSurface.withValues(alpha: 0.72);
+
     return SlideTransition(
       position: _slideAnimation,
       child: FadeTransition(
         opacity: _fadeAnimation,
         child: Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: _buildAppBar(),
           body: SafeArea(
             child: Padding(
@@ -89,13 +83,16 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // ── Top spacing ────────────────────────
+                  // Top spacing
+                  // Top spacing
                   const SizedBox(height: 40),
 
-                  // ── Main content ────────────────────────
+                  // Main content
+                  // Main content
                   Column(
                     children: [
-                      // ── Icon ────────────────────────────
+                      // Icon
+                      // Icon
                       ScaleTransition(
                         scale: _iconScale,
                         child: Container(
@@ -110,7 +107,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                             borderRadius: BorderRadius.circular(30),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.primary.withOpacity(0.3),
+                                color: AppColors.primary.withValues(alpha: 0.3),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
@@ -125,23 +122,24 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                       ),
                       const SizedBox(height: 40),
 
-                      // ── Title ────────────────────────────
-                      const Text(
-                        'Scan Your Food',
+                      // Title
+                      // Title
+                      Text(
+                        l10n.scanYourFood,
                         style: TextStyle(
-                          color: AppColors.textPrimary,
+                          color: onSurface,
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 12),
 
-                      // ── Subtitle ─────────────────────────
-                      const Text(
-                        'Take a photo or upload an image to analyze nutritional information',
+                      // Subtitle
+                      Text(
+                        l10n.scanSubtitle,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: AppColors.textSecondary,
+                          color: mutedText,
                           fontSize: 14,
                           height: 1.5,
                         ),
@@ -149,28 +147,28 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                     ],
                   ),
 
-                  // ── Buttons ─────────────────────────────
+                  // Buttons
                   Column(
                     children: [
-                      // ── Camera Button ────────────────────
+                      // Camera Button
                       _buildActionButton(
                         icon: Icons.camera_alt,
-                        label: 'Take Photo',
+                        label: l10n.takePhoto,
                         onPressed: () {
                           // TODO: Open camera
-                          _showComingSoonDialog('Camera feature coming soon');
+                          _showComingSoonDialog(l10n.cameraFeatureComingSoon);
                         },
                         isPrimary: true,
                       ),
                       const SizedBox(height: 16),
 
-                      // ── Gallery Button ───────────────────
+                      // Gallery Button
                       _buildActionButton(
                         icon: Icons.image,
-                        label: 'Choose from Gallery',
+                        label: l10n.chooseFromGallery,
                         onPressed: () {
                           // TODO: Open gallery
-                          _showComingSoonDialog('Gallery feature coming soon');
+                          _showComingSoonDialog(l10n.galleryFeatureComingSoon);
                         },
                         isPrimary: false,
                       ),
@@ -187,11 +185,13 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final l10n = AppLocalizations.of(context)!;
+
     return AppBar(
       backgroundColor: AppColors.primary,
       elevation: 0,
-      title: const Text(
-        'AI Scan',
+      title: Text(
+        l10n.scanTitle,
         style: TextStyle(
           color: Colors.white,
           fontSize: 18,
@@ -220,6 +220,10 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
     required VoidCallback onPressed,
     required bool isPrimary,
   }) {
+    final surface = Theme.of(context).colorScheme.surface;
+    final borderColor =
+        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16);
+
     return GestureDetector(
       onTap: onPressed,
       child: Container(
@@ -230,15 +234,14 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
                   colors: [Color(0xFF2E7D32), Color(0xFF388E3C)],
                 )
               : null,
-          color: isPrimary ? null : AppColors.surface,
+          color: isPrimary ? null : surface,
           borderRadius: BorderRadius.circular(12),
-          border: !isPrimary
-              ? Border.all(color: AppColors.border, width: 1.5)
-              : null,
+          border:
+              !isPrimary ? Border.all(color: borderColor, width: 1.5) : null,
           boxShadow: [
             if (isPrimary)
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.3),
+                color: AppColors.primary.withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 6),
               ),
@@ -268,16 +271,17 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   }
 
   void _showComingSoonDialog(String message) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Coming Soon'),
+        title: Text(l10n.comingSoon),
         content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: Text(MaterialLocalizations.of(context).okButtonLabel),
           ),
         ],
       ),

@@ -1,8 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
+﻿import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:food_lens/l10n/app_localizations.dart';
 import 'package:food_lens/core/theme/app_colors.dart';
 import 'package:food_lens/core/widgets/animated_widgets.dart';
 import 'package:food_lens/core/services/cloudinary_service.dart';
@@ -45,9 +46,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
     ageController = TextEditingController();
     heightController = TextEditingController();
     weightController = TextEditingController();
-    selectedGender = 'Male';
-    selectedActivityLevel = 'Moderate';
-    selectedGoal = 'Maintain';
+    selectedGender = 'male';
+    selectedActivityLevel = 'moderate';
+    selectedGoal = 'maintain';
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _pageEnterController.forward();
@@ -87,6 +88,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final state = ref.watch(profileViewModelProvider);
     final currentProfile = state.profile.valueOrNull;
 
@@ -100,7 +102,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
       child: FadeTransition(
         opacity: _fadeAnimation,
         child: Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: _buildAppBar(context),
           body: currentProfile == null && state.profile.isLoading
               ? const Center(child: CircularProgressIndicator())
@@ -111,38 +113,41 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                     children: [
                       FadeInWidget(
                         delay: const Duration(milliseconds: 80),
-                        child: _buildAvatarSection(),
+                        child: _buildAvatarSection(context),
                       ),
                       const SizedBox(height: 20),
                       FadeInWidget(
                         delay: const Duration(milliseconds: 100),
-                        child: _buildSectionTitle('Personal Information'),
+                        child: _buildSectionTitle(l10n.personalInformation),
                       ),
                       const SizedBox(height: 12),
                       FadeInWidget(
                         delay: const Duration(milliseconds: 150),
-                        child: _buildTextField('Full Name', nameController),
+                        child: _buildTextField(l10n.fullName, nameController),
                       ),
                       const SizedBox(height: 12),
                       FadeInWidget(
                         delay: const Duration(milliseconds: 200),
-                        child: _buildTextField('Age', ageController,
+                        child: _buildTextField(l10n.age, ageController,
                             isNumeric: true, onChanged: (_) => setState(() {})),
                       ),
                       const SizedBox(height: 12),
                       FadeInWidget(
                         delay: const Duration(milliseconds: 250),
                         child: _buildDropdownField(
-                          'Gender',
+                          l10n.gender,
                           selectedGender,
-                          const ['Male', 'Female'],
+                          [
+                            MapEntry('male', l10n.male),
+                            MapEntry('female', l10n.female),
+                          ],
                           (value) => setState(() => selectedGender = value),
                         ),
                       ),
                       const SizedBox(height: 24),
                       FadeInWidget(
                         delay: const Duration(milliseconds: 300),
-                        child: _buildSectionTitle('Physical Measurements'),
+                        child: _buildSectionTitle(l10n.physicalMeasurements),
                       ),
                       const SizedBox(height: 12),
                       FadeInWidget(
@@ -151,7 +156,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                           children: [
                             Expanded(
                               child: _buildTextField(
-                                'Height (cm)',
+                                l10n.heightCm,
                                 heightController,
                                 isNumeric: true,
                                 onChanged: (_) => setState(() {}),
@@ -160,7 +165,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                             const SizedBox(width: 12),
                             Expanded(
                               child: _buildTextField(
-                                'Weight (kg)',
+                                l10n.weightKg,
                                 weightController,
                                 isNumeric: true,
                                 onChanged: (_) => setState(() {}),
@@ -176,18 +181,23 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                           children: [
                             Expanded(
                               child: _buildInfoCard(
-                                'BMI',
+                                l10n.bmi,
                                 bmi.toStringAsFixed(1),
-                                _getBMIStatus(bmi),
+                                _getBMIStatus(bmi, l10n),
                                 _getBMIColor(bmi),
                               ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: _buildInfoCard(
-                                'TDEE',
+                                l10n.tdee,
                                 '${tdee.toStringAsFixed(0)} kcal',
-                                'Based on ${selectedActivityLevel?.toLowerCase()} activity',
+                                l10n.basedOnActivity(
+                                  _activityLevelLocalizedLabel(
+                                    l10n,
+                                    selectedActivityLevel,
+                                  ),
+                                ),
                                 Colors.blue,
                               ),
                             ),
@@ -197,20 +207,20 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                       const SizedBox(height: 24),
                       FadeInWidget(
                         delay: const Duration(milliseconds: 500),
-                        child: _buildSectionTitle('Activity & Goal'),
+                        child: _buildSectionTitle(l10n.activityGoal),
                       ),
                       const SizedBox(height: 12),
                       FadeInWidget(
                         delay: const Duration(milliseconds: 550),
                         child: _buildDropdownField(
-                          'Activity Level',
+                          l10n.activityLevel,
                           selectedActivityLevel,
-                          const [
-                            'Sedentary',
-                            'Light',
-                            'Moderate',
-                            'Active',
-                            'Very Active'
+                          [
+                            MapEntry('sedentary', l10n.sedentary),
+                            MapEntry('light', l10n.light),
+                            MapEntry('moderate', l10n.moderate),
+                            MapEntry('active', l10n.active),
+                            MapEntry('very_active', l10n.veryActive),
                           ],
                           (value) =>
                               setState(() => selectedActivityLevel = value),
@@ -220,9 +230,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                       FadeInWidget(
                         delay: const Duration(milliseconds: 600),
                         child: _buildDropdownField(
-                          'Goal',
+                          l10n.goal,
                           selectedGoal,
-                          const ['Lose Weight', 'Maintain', 'Gain Weight'],
+                          [
+                            MapEntry('lose_weight', l10n.loseWeight),
+                            MapEntry('maintain', l10n.maintain),
+                            MapEntry('gain_weight', l10n.gainWeight),
+                          ],
                           (value) => setState(() => selectedGoal = value),
                         ),
                       ),
@@ -241,10 +255,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(color: AppColors.border),
                                   ),
-                                  child: const Center(
+                                  child: Center(
                                     child: Text(
-                                      'Discard',
-                                      style: TextStyle(
+                                      l10n.discard,
+                                      style: const TextStyle(
                                         color: AppColors.textPrimary,
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
@@ -290,8 +304,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                                               strokeWidth: 2,
                                             ),
                                           )
-                                        : const Text(
-                                            'Save Changes',
+                                        : Text(
+                                            l10n.saveChanges,
                                             style: TextStyle(
                                               color: Colors.white,
                                               fontSize: 16,
@@ -325,11 +339,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return AppBar(
       backgroundColor: AppColors.primary,
       elevation: 0,
-      title: const Text(
-        'Edit Profile',
+      title: Text(
+        l10n.editProfileTitle,
         style: TextStyle(
           color: Colors.white,
           fontSize: 18,
@@ -354,7 +370,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
     );
   }
 
-  Widget _buildAvatarSection() {
+  Widget _buildAvatarSection(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final initials = nameController.text.trim().isNotEmpty
         ? nameController.text.trim().substring(0, 1).toUpperCase()
         : 'U';
@@ -430,9 +447,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
             ],
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Tap camera to change avatar',
-            style: TextStyle(
+          Text(
+            l10n.tapCameraChangeAvatar,
+            style: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 12,
             ),
@@ -480,7 +497,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
   Widget _buildDropdownField(
     String label,
     String? value,
-    List<String> items,
+    List<MapEntry<String, String>> items,
     ValueChanged<String?> onChanged,
   ) {
     return Container(
@@ -494,8 +511,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
         value: value,
         items: items.map((item) {
           return DropdownMenuItem(
-            value: item,
-            child: Text(item),
+            value: item.key,
+            child: Text(item.value),
           );
         }).toList(),
         onChanged: onChanged,
@@ -564,27 +581,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
     final age = double.tryParse(ageController.text) ?? 0;
     if (weight == 0 || height == 0 || age == 0) return 0;
 
-    final bmr = selectedGender == 'Male'
+    final bmr = selectedGender == 'male'
         ? 10 * weight + 6.25 * height - 5 * age + 5
         : 10 * weight + 6.25 * height - 5 * age - 161;
 
     final multiplier = switch (selectedActivityLevel) {
-      'Sedentary' => 1.2,
-      'Light' => 1.375,
-      'Moderate' => 1.55,
-      'Active' => 1.725,
-      'Very Active' => 1.9,
+      'sedentary' => 1.2,
+      'light' => 1.375,
+      'moderate' => 1.55,
+      'active' => 1.725,
+      'very_active' => 1.9,
       _ => 1.375,
     };
 
     return bmr * multiplier;
   }
 
-  String _getBMIStatus(double value) {
-    if (value < 18.5) return 'Underweight';
-    if (value < 25) return 'Normal weight';
-    if (value < 30) return 'Overweight';
-    return 'Obese';
+  String _getBMIStatus(double value, AppLocalizations l10n) {
+    if (value < 18.5) return l10n.underweight;
+    if (value < 25) return l10n.normalWeight;
+    if (value < 30) return l10n.overweight;
+    return l10n.obese;
   }
 
   Color _getBMIColor(double value) {
@@ -600,9 +617,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
     heightController.text = profile.height.toStringAsFixed(0);
     weightController.text = profile.weight.toStringAsFixed(0);
     _avatarUrl = profile.photoUrl;
-    selectedGender = profile.gender;
-    selectedActivityLevel = profile.activityLevel;
-    selectedGoal = profile.goal;
+    selectedGender = _genderCode(profile.gender);
+    selectedActivityLevel = _activityLevelCode(profile.activityLevel);
+    selectedGoal = _goalCode(profile.goal);
   }
 
   Future<void> _pickAndUploadAvatar() async {
@@ -626,8 +643,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
 
     if (uploadedUrl == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Upload avatar thất bại. Vui lòng thử lại.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.uploadAvatarFailed),
           backgroundColor: AppColors.error,
         ),
       );
@@ -654,9 +671,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
       age: int.tryParse(ageController.text) ?? oldProfile.age,
       height: double.tryParse(heightController.text) ?? oldProfile.height,
       weight: double.tryParse(weightController.text) ?? oldProfile.weight,
-      gender: selectedGender ?? oldProfile.gender,
-      activityLevel: selectedActivityLevel ?? oldProfile.activityLevel,
-      goal: selectedGoal ?? oldProfile.goal,
+      gender: _genderDisplay(selectedGender) ?? oldProfile.gender,
+      activityLevel: _activityLevelDisplay(selectedActivityLevel) ??
+          oldProfile.activityLevel,
+      goal: _goalDisplay(selectedGoal) ?? oldProfile.goal,
       dailyCalorieTarget: tdee,
       createdAt: oldProfile.createdAt,
       updatedAt: DateTime.now(),
@@ -670,7 +688,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
     if (latestState.errorMessage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Profile updated successfully'),
+          content:
+              Text(AppLocalizations.of(context)!.profileUpdatedSuccessfully),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -680,5 +699,72 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
       );
       context.go('/profile');
     }
+  }
+
+  String _genderCode(String value) {
+    return switch (value.toLowerCase()) {
+      'female' => 'female',
+      _ => 'male',
+    };
+  }
+
+  String _activityLevelCode(String value) {
+    return switch (value.toLowerCase()) {
+      'sedentary' => 'sedentary',
+      'light' => 'light',
+      'active' => 'active',
+      'very active' => 'very_active',
+      _ => 'moderate',
+    };
+  }
+
+  String _goalCode(String value) {
+    return switch (value.toLowerCase()) {
+      'lose weight' => 'lose_weight',
+      'gain weight' => 'gain_weight',
+      _ => 'maintain',
+    };
+  }
+
+  String? _genderDisplay(String? code) {
+    return switch (code) {
+      'male' => 'Male',
+      'female' => 'Female',
+      _ => null,
+    };
+  }
+
+  String? _activityLevelDisplay(String? code) {
+    return switch (code) {
+      'sedentary' => 'Sedentary',
+      'light' => 'Light',
+      'moderate' => 'Moderate',
+      'active' => 'Active',
+      'very_active' => 'Very Active',
+      _ => null,
+    };
+  }
+
+  String? _goalDisplay(String? code) {
+    return switch (code) {
+      'lose_weight' => 'Lose Weight',
+      'maintain' => 'Maintain',
+      'gain_weight' => 'Gain Weight',
+      _ => null,
+    };
+  }
+
+  String _activityLevelLocalizedLabel(
+    AppLocalizations l10n,
+    String? code,
+  ) {
+    return switch (code) {
+      'sedentary' => l10n.sedentary,
+      'light' => l10n.light,
+      'moderate' => l10n.moderate,
+      'active' => l10n.active,
+      'very_active' => l10n.veryActive,
+      _ => l10n.moderate,
+    };
   }
 }

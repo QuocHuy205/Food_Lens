@@ -259,7 +259,7 @@ class _AnimatedLoadingOverlayState extends State<AnimatedLoadingOverlay>
           FadeTransition(
             opacity: _fadeAnimation,
             child: Container(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
               child: Center(
                 child: Container(
                   padding: const EdgeInsets.all(24),

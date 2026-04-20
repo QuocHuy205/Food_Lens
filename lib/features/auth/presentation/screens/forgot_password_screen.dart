@@ -1,5 +1,5 @@
-// ============================================================
-// 📱 SCREEN — ForgotPasswordScreen
+﻿// ============================================================
+// SCREEN - ForgotPasswordScreen
 // File: lib/features/auth/presentation/screens/forgot_password_screen.dart
 // Route: /forgot-password
 // ============================================================
@@ -8,21 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../providers/auth_provider.dart';
-
-class AppColors {
-  static const Color primary = Color(0xFF2E7D32);
-  static const Color primaryDark = Color(0xFF1B5E20);
-  static const Color accent = Color(0xFFFF6F00);
-  static const Color background = Color(0xFFF5F5F5);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color error = Color(0xFFD32F2F);
-  static const Color border = Color(0xFFE0E0E0);
-  static const Color success = Color(0xFF43A047);
-  static const Color warning = Color(0xFFFFA000);
-}
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -159,7 +146,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen>
       child: FadeTransition(
         opacity: _fadeAnimation,
         child: Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: _buildAppBar(),
           body: SafeArea(
             child: Padding(
@@ -171,27 +158,27 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen>
                   children: [
                     const SizedBox(height: 16),
 
-                    // ── Header ────────────────────────────
+                    // Header
                     _buildHeader(),
 
                     const SizedBox(height: 32),
 
-                    // ── Email Field ───────────────────────
+                    // Email Field
                     _buildEmailField(),
 
                     const SizedBox(height: 24),
 
-                    // ── Reset Button ──────────────────────
+                    // Reset Button
                     _buildResetButton(),
 
                     const SizedBox(height: 20),
 
-                    // ── Back to Login ─────────────────────
+                    // Back to Login
                     _buildBackToLogin(),
 
                     const Spacer(),
 
-                    // ── Footer ────────────────────────────
+                    // Footer
                     _buildFooter(),
 
                     const SizedBox(height: 24),
@@ -207,7 +194,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen>
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       elevation: 0,
       centerTitle: true,
       leading: GestureDetector(

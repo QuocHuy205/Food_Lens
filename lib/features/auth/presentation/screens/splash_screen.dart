@@ -5,12 +5,11 @@
 // ============================================================
 
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../../../core/widgets/app_logo.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -21,23 +20,22 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  // ── Animation Controller ───────────────────────────────────
   late final AnimationController _controller;
   late final Timer _navigationTimer;
 
-  // ── Animations ─────────────────────────────────────────────
-  late Animation<double> _logoScale;
-  late Animation<double> _logoOpacity;
-  late Animation<double> _taglineScale;
-  late Animation<double> _taglineOpacity;
-  late Animation<double> _loadingOpacity;
+  late final Animation<double> _logoScale;
+  late final Animation<double> _logoOpacity;
+  late final Animation<double> _titleOpacity;
+  late final Animation<double> _titleSlide;
+  late final Animation<double> _indicatorOpacity;
+  late final Animation<double> _progressValue;
 
   @override
   void initState() {
     super.initState();
     _setupAnimations();
     _controller.forward();
-    _navigationTimer = Timer(const Duration(milliseconds: 2600), () {
+    _navigationTimer = Timer(const Duration(milliseconds: 3000), () {
       if (!mounted) return;
       final isLoggedIn = FirebaseAuth.instance.currentUser != null;
       context.go(isLoggedIn ? '/home' : '/login');
@@ -47,28 +45,62 @@ class _SplashScreenState extends State<SplashScreen>
   void _setupAnimations() {
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2600),
+      duration: const Duration(milliseconds: 3000),
     );
 
-    final logoCurve = CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.0, 0.18, curve: Curves.easeOut),
+    _logoScale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 0.78, end: 1.06)
+            .chain(CurveTween(curve: Curves.easeOutBack)),
+        weight: 55,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.06, end: 1.0)
+            .chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 45,
+      ),
+    ]).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.45),
+      ),
     );
-    _logoScale = Tween<double>(begin: 0.0, end: 1.0).animate(logoCurve);
-    _logoOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(logoCurve);
 
-    final taglineCurve = CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.10, 0.26, curve: Curves.easeOut),
+    _logoOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.32, curve: Curves.easeOut),
+      ),
     );
-    _taglineScale = Tween<double>(begin: 0.0, end: 1.0).animate(taglineCurve);
-    _taglineOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(taglineCurve);
 
-    final loadingCurve = CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.18, 0.34, curve: Curves.easeOut),
+    _titleOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.28, 0.55, curve: Curves.easeOut),
+      ),
     );
-    _loadingOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(loadingCurve);
+
+    _titleSlide = Tween<double>(begin: 20, end: 0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.28, 0.58, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _indicatorOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.5, 0.76, curve: Curves.easeOut),
+      ),
+    );
+
+    _progressValue = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve:
+            const Interval(0.5, 0.98, curve: Curves.easeInOutCubicEmphasized),
+      ),
+    );
   }
 
   @override
@@ -80,59 +112,128 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.sizeOf(context).height;
+
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1B5E20), // Dark green top
-              Color(0xFF2E7D32), // Primary green mid
-              Color(0xFF43A047), // Light green bottom
-            ],
+        color: const Color(0xFF2F8733),
+        child: SafeArea(
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return Column(
+                children: [
+                  SizedBox(height: screenHeight * 0.12),
+                  _buildLogoCluster(),
+                  SizedBox(height: screenHeight * 0.05),
+                  Transform.translate(
+                    offset: const Offset(0, -10),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Transform.translate(
+                          offset: const Offset(0, -8),
+                          child: _buildTitle(),
+                        ),
+                        SizedBox(height: screenHeight * 0.028),
+                        _buildLoadingDot(),
+                        const SizedBox(height: 12),
+                        _buildProgressBar(),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                ],
+              );
+            },
           ),
         ),
-        child: SafeArea(
+      ),
+    );
+  }
+
+  Widget _buildLogoCluster() {
+    final pulse =
+        0.88 + (math.sin(_controller.value * math.pi * 4.0).abs() * 0.12);
+
+    return Opacity(
+      opacity: _logoOpacity.value,
+      child: Transform.scale(
+        scale: _logoScale.value,
+        child: SizedBox(
+          width: 310,
+          height: 310,
           child: Stack(
+            alignment: Alignment.center,
             children: [
-              // ── Main Content ───────────────────────────
-              Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // ── Logo Icon ──────────────────────
-                    _buildAnimatedLogo(),
-
-                    const SizedBox(height: 24),
-
-                    // ── App Name ───────────────────────
-                    _buildAnimatedTitle(),
-
-                    const SizedBox(height: 8),
-
-                    // ── Tagline ────────────────────────
-                    _buildAnimatedTagline(),
-
-                    const SizedBox(height: 48),
-
-                    // ── Loading Indicator ──────────────
-                    _buildLoadingIndicator(),
-                  ],
+              Transform.scale(
+                scale: pulse,
+                child: Container(
+                  width: 250,
+                  height: 250,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    shape: BoxShape.circle,
+                  ),
                 ),
               ),
-
-              // ── Background Food Image (decorative) ────
-              _buildBackgroundDecoration(),
-
-              // ── "PREPARING YOUR KITCHEN" text ─────────
-              Positioned(
-                bottom: 24,
-                left: 0,
-                right: 0,
-                child: _buildPreparingText(),
+              Transform.rotate(
+                angle: -0.3,
+                child: Container(
+                  width: 230,
+                  height: 215,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(96),
+                  ),
+                ),
+              ),
+              Transform.rotate(
+                angle: 0.34,
+                child: Container(
+                  width: 225,
+                  height: 210,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.13),
+                    borderRadius: BorderRadius.circular(90),
+                  ),
+                ),
+              ),
+              Container(
+                width: 205,
+                height: 205,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.28),
+                      Colors.white.withValues(alpha: 0.22),
+                    ],
+                  ),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 26,
+                      offset: const Offset(0, 14),
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.restaurant_menu,
+                    size: 78,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ],
           ),
@@ -141,144 +242,74 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  Widget _buildAnimatedLogo() {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _logoScale.value,
-          child: Opacity(
-            opacity: _logoOpacity.value,
-            child: child,
+  Widget _buildTitle() {
+    final maxWidth = MediaQuery.sizeOf(context).width - 48;
+
+    return Opacity(
+      opacity: _titleOpacity.value,
+      child: Transform.translate(
+        offset: Offset(0, _titleSlide.value),
+        child: SizedBox(
+          width: maxWidth,
+          child: const FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              'Food Lens',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Color(0xFFF3F7F3),
+                fontSize: 50,
+                fontWeight: FontWeight.w700,
+                height: 1,
+                letterSpacing: 0.2,
+                shadows: [
+                  Shadow(
+                    color: Color.fromARGB(45, 0, 0, 0),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+            ),
           ),
-        );
-      },
-      child: const AppLogo(
-        size: 80,
-        iconSize: 40,
-        borderRadius: BorderRadius.all(Radius.circular(20)),
-      ),
-    );
-  }
-
-  Widget _buildAnimatedTitle() {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _logoOpacity.value,
-          child: child,
-        );
-      },
-      child: const Text(
-        'Food Lens',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 32,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
         ),
       ),
     );
   }
 
-  Widget _buildAnimatedTagline() {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _taglineScale.value,
-          child: Opacity(
-            opacity: _taglineOpacity.value,
-            child: child,
-          ),
-        );
-      },
-      child: const Text(
-        'Scan. Track. Thrive.',
-        style: TextStyle(
-          color: Colors.white70,
-          fontSize: 16,
-          letterSpacing: 1.5,
-          fontWeight: FontWeight.w300,
-        ),
-      ),
-    );
-  }
+  Widget _buildLoadingDot() {
+    final glow = 0.5 + (math.sin(_controller.value * math.pi * 8).abs() * 0.5);
 
-  Widget _buildLoadingIndicator() {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _loadingOpacity.value,
-          child: child,
-        );
-      },
-      child: const SizedBox(
-        width: 24,
-        height: 24,
-        child: CircularProgressIndicator(
-          strokeWidth: 2.5,
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+    return Opacity(
+      opacity: _indicatorOpacity.value,
+      child: Container(
+        width: 58,
+        height: 58,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.white.withValues(alpha: 0.35 * glow),
+              blurRadius: 24,
+              spreadRadius: 3,
+            ),
+          ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildBackgroundDecoration() {
-    // Semi-transparent food image card (as seen in design)
-    return Positioned(
-      top: 40,
-      left: 16,
-      right: 16,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          return Opacity(
-            opacity: (_logoOpacity.value * 0.6).clamp(0.0, 1.0),
-            child: child,
-          );
-        },
         child: Container(
-          height: 120,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(16),
+            color: const Color(0xFFEFF5EF),
+            shape: BoxShape.circle,
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: Colors.white.withValues(alpha: 0.75),
               width: 1,
             ),
           ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Beautifully safe where',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 11,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Safe work',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'The Living Laboratory',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 12,
-                  ),
-                ),
-              ],
+          child: Transform.rotate(
+            angle: _controller.value * math.pi * 1.4,
+            child: const Icon(
+              Icons.gps_fixed_rounded,
+              color: Color(0xFF74A677),
+              size: 30,
             ),
           ),
         ),
@@ -286,23 +317,22 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  Widget _buildPreparingText() {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _loadingOpacity.value,
-          child: child,
-        );
-      },
-      child: const Text(
-        'PREPARING YOUR KITCHEN',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: Colors.white38,
-          fontSize: 11,
-          letterSpacing: 2.0,
-          fontWeight: FontWeight.w400,
+  Widget _buildProgressBar() {
+    final width = (MediaQuery.sizeOf(context).width - 72).clamp(208.0, 448.0);
+
+    return Opacity(
+      opacity: _indicatorOpacity.value,
+      child: SizedBox(
+        width: width,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: LinearProgressIndicator(
+            minHeight: 18,
+            value: _progressValue.value,
+            backgroundColor: Colors.white.withValues(alpha: 0.09),
+            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFE4EBE4)),
+            borderRadius: BorderRadius.circular(999),
+          ),
         ),
       ),
     );

@@ -1,5 +1,5 @@
-// ============================================================
-// 📱 SCREEN 03 — RegisterScreen
+﻿// ============================================================
+// SCREEN 03 - RegisterScreen
 // File: lib/screens/register_screen.dart
 // Route: /register
 // ============================================================
@@ -8,23 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_logo.dart';
 import '../providers/auth_provider.dart';
-
-// ── App Colors (copy from login_screen.dart or shared file) ──
-class AppColors {
-  static const Color primary = Color(0xFF2E7D32);
-  static const Color primaryDark = Color(0xFF1B5E20);
-  static const Color accent = Color(0xFFFF6F00);
-  static const Color background = Color(0xFFF5F5F5);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color error = Color(0xFFD32F2F);
-  static const Color border = Color(0xFFE0E0E0);
-  static const Color success = Color(0xFF43A047);
-  static const Color warning = Color(0xFFFFA000);
-}
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -35,7 +21,7 @@ class RegisterScreen extends ConsumerStatefulWidget {
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen>
     with TickerProviderStateMixin {
-  // ── Form ──────────────────────────────────────────────────
+  // Form
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -53,7 +39,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
   bool _isLoading = false;
   int _passwordStrength = 0; // 0-4
 
-  // ── Animation Controllers ──────────────────────────────────
+  // Animation Controllers
   late AnimationController _pageEnterController;
   late AnimationController _buttonController;
   late AnimationController _strengthController;
@@ -63,7 +49,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
   late AnimationController _passwordFocusController;
   late AnimationController _confirmFocusController;
 
-  // ── Animations ─────────────────────────────────────────────
+  // Animations
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<double> _buttonScale;
@@ -202,11 +188,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
   void _onPasswordChanged() {
     final password = _passwordController.text;
     int strength = 0;
-    if (password.length >= 6) strength++;
-    if (password.length >= 10) strength++;
+    if (password.length >= 6) {
+      strength++;
+    }
+    if (password.length >= 10) {
+      strength++;
+    }
     if (RegExp(r'[A-Z]').hasMatch(password) &&
-        RegExp(r'[0-9]').hasMatch(password)) strength++;
-    if (RegExp(r'[!@#\$%^&*]').hasMatch(password)) strength++;
+        RegExp(r'[0-9]').hasMatch(password)) {
+      strength++;
+    }
+    if (RegExp(r'[!@#\$%^&*]').hasMatch(password)) {
+      strength++;
+    }
 
     if (strength != _passwordStrength) {
       setState(() => _passwordStrength = strength);
@@ -405,25 +399,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
       child: FadeTransition(
         opacity: _fadeAnimation,
         child: Scaffold(
-          backgroundColor: AppColors.background,
-          resizeToAvoidBottomInset: false,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          resizeToAvoidBottomInset: true,
           appBar: _buildAppBar(),
           body: SafeArea(
-            child: Padding(
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 4),
-
-                    // ── Header ────────────────────────────
-                    _buildHeader(),
-
                     const SizedBox(height: 16),
-
-                    // ── Full Name ─────────────────────────
+                    _buildHeader(),
+                    const SizedBox(height: 16),
                     _buildTextField(
                       label: 'FULL NAME',
                       hint: 'John Doe',
@@ -433,15 +423,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                       focusController: _nameFocusController,
                       prefixIcon: Icons.person_outline,
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'Nhập họ tên';
-                        if (v.length < 3) return 'Ít nhất 3 ký tự';
+                        if (v == null || v.isEmpty) {
+                          return 'Nhập họ tên';
+                        }
+                        if (v.length < 3) {
+                          return 'Ít nhất 3 ký tự';
+                        }
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 10),
-
-                    // ── Email ─────────────────────────────
                     _buildTextField(
                       label: 'EMAIL ADDRESS',
                       hint: 'john@example.com',
@@ -452,7 +443,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                       prefixIcon: Icons.mail_outline,
                       keyboardType: TextInputType.emailAddress,
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'Nhập email';
+                        if (v == null || v.isEmpty) {
+                          return 'Nhập email';
+                        }
                         if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
                             .hasMatch(v)) {
                           return 'Email không hợp lệ';
@@ -460,18 +453,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 10),
-
-                    // ── Password ──────────────────────────
                     _buildPasswordFieldWithStrength(),
-
                     const SizedBox(height: 10),
-
-                    // ── Confirm Password ──────────────────
                     _buildTextField(
                       label: 'CONFIRM PASSWORD',
-                      hint: '••••••••',
+                      hint: '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022',
                       controller: _confirmPasswordController,
                       focusNode: _confirmFocus,
                       borderColor: _confirmBorderColor,
@@ -479,51 +466,46 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                       prefixIcon: Icons.lock_outline,
                       obscureText: _obscureConfirm,
                       hintFontSize: 18,
-                      suffixIcon: GestureDetector(
-                        onTap: () =>
-                            setState(() => _obscureConfirm = !_obscureConfirm),
-                        child: Icon(
-                          _obscureConfirm
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          color: AppColors.textSecondary,
-                          size: 20,
+                      suffixIcon: Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: IconButton(
+                          onPressed: () => setState(
+                              () => _obscureConfirm = !_obscureConfirm),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minHeight: 24,
+                            minWidth: 24,
+                          ),
+                          splashRadius: 18,
+                          icon: Icon(
+                            _obscureConfirm
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            color: AppColors.textSecondary,
+                            size: 20,
+                          ),
                         ),
                       ),
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'Xác nhận mật khẩu';
+                        if (v == null || v.isEmpty) {
+                          return 'Xác nhận mật khẩu';
+                        }
                         if (v != _passwordController.text) {
                           return 'Mật khẩu không khớp';
                         }
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 10),
-
-                    // ── Terms Checkbox ────────────────────
                     _buildTermsCheckbox(),
-
                     const SizedBox(height: 16),
-
-                    // ── Register Button ───────────────────
                     _buildRegisterButton(),
-
                     const SizedBox(height: 12),
-
-                    // ── Divider ────────────────────────────
                     _buildDivider(),
-
                     const SizedBox(height: 12),
-
-                    // ── Google Sign-In Button ─────────────
                     _buildGoogleButton(),
-
                     const SizedBox(height: 12),
-
-                    // ── Login Link ────────────────────────
                     _buildLoginLink(),
-
                     const SizedBox(height: 16),
                   ],
                 ),
@@ -535,11 +517,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     );
   }
 
-  // ── App Bar ──────────────────────────────────────────────
+  // App Bar
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       elevation: 0,
       centerTitle: true,
       title: const Text(
@@ -554,7 +536,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     );
   }
 
-  // ── Header ───────────────────────────────────────────────
+  // Header
 
   Widget _buildHeader() {
     return Column(
@@ -588,7 +570,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     );
   }
 
-  // ── Generic Text Field ────────────────────────────────────
+  // Generic Text Field
 
   Widget _buildTextField({
     required String label,
@@ -636,6 +618,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
             controller: controller,
             focusNode: focusNode,
             obscureText: obscureText,
+            textAlignVertical: TextAlignVertical.center,
             keyboardType: keyboardType,
             style: const TextStyle(
               color: AppColors.textPrimary,
@@ -651,6 +634,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
               prefixIcon:
                   Icon(prefixIcon, color: AppColors.textSecondary, size: 20),
               suffixIcon: suffixIcon,
+              suffixIconConstraints: const BoxConstraints(
+                minHeight: 40,
+                minWidth: 40,
+              ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
@@ -664,7 +651,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     );
   }
 
-  // ── Password Field with Strength Indicator ────────────────
+  // Password Field with Strength Indicator
 
   Widget _buildPasswordFieldWithStrength() {
     return Column(
@@ -699,12 +686,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
             controller: _passwordController,
             focusNode: _passwordFocus,
             obscureText: _obscurePassword,
+            textAlignVertical: TextAlignVertical.center,
             style: const TextStyle(
               color: AppColors.textPrimary,
               fontSize: 14,
             ),
             decoration: InputDecoration(
-              hintText: '••••••••',
+              hintText: '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022',
               hintStyle: TextStyle(
                 color: AppColors.textSecondary.withValues(alpha: 0.5),
                 fontSize: 18,
@@ -712,16 +700,29 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
               ),
               prefixIcon: const Icon(Icons.lock_outline,
                   color: AppColors.textSecondary, size: 20),
-              suffixIcon: GestureDetector(
-                onTap: () =>
-                    setState(() => _obscurePassword = !_obscurePassword),
-                child: Icon(
-                  _obscurePassword
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                  color: AppColors.textSecondary,
-                  size: 20,
+              suffixIcon: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: IconButton(
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minHeight: 24,
+                    minWidth: 24,
+                  ),
+                  splashRadius: 18,
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  ),
                 ),
+              ),
+              suffixIconConstraints: const BoxConstraints(
+                minHeight: 40,
+                minWidth: 40,
               ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(
@@ -730,14 +731,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
               ),
             ),
             validator: (v) {
-              if (v == null || v.isEmpty) return 'Nhập mật khẩu';
-              if (v.length < 6) return 'Ít nhất 6 ký tự';
+              if (v == null || v.isEmpty) {
+                return 'Nhập mật khẩu';
+              }
+              if (v.length < 6) {
+                return 'Ít nhất 6 ký tự';
+              }
               return null;
             },
           ),
         ),
 
-        // ── Password Strength Bar ────────────────────────
+        // Password Strength Bar
         if (_passwordController.text.isNotEmpty) ...[
           const SizedBox(height: 8),
           _buildStrengthIndicator(),
@@ -800,7 +805,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     );
   }
 
-  // ── Terms Checkbox ────────────────────────────────────────
+  // Terms Checkbox
 
   Widget _buildTermsCheckbox() {
     return GestureDetector(
@@ -871,7 +876,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     );
   }
 
-  // ── Register Button ───────────────────────────────────────
+  // Register Button
 
   Widget _buildRegisterButton() {
     return AnimatedBuilder(
@@ -936,7 +941,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     );
   }
 
-  // ── Divider ───────────────────────────────────────────────
+  // Divider
   Widget _buildDivider() {
     return Row(
       children: [
@@ -966,7 +971,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     );
   }
 
-  // ── Google Sign-In Button ─────────────────────────────────
+  // Google Sign-In Button
   Widget _buildGoogleButton() {
     return GestureDetector(
       onTap: _isLoading ? null : _handleGoogleSignIn,
@@ -1033,7 +1038,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     );
   }
 
-  // ── Login Link ────────────────────────────────────────────
+  // Login Link
 
   Widget _buildLoginLink() {
     return Row(

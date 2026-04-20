@@ -1,12 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:food_lens/l10n/app_localizations.dart';
 import 'package:food_lens/core/theme/app_colors.dart';
 import 'package:food_lens/core/widgets/animated_widgets.dart';
+import 'package:food_lens/core/widgets/app_bottom_nav.dart';
 
-// ═══════════════════════════════════════════════════════════
-// STATS SCREEN — With animations
+// STATS SCREEN - With animations
 // Refactored: Page enter + staggered content + animated period selector
-// ═══════════════════════════════════════════════════════════
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({super.key});
@@ -17,13 +16,13 @@ class StatsScreen extends StatefulWidget {
 
 class _StatsScreenState extends State<StatsScreen>
     with TickerProviderStateMixin {
-  // ── Animation Controllers ──────────────────────────────────
+  // Animation Controllers
   late AnimationController _pageEnterController;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
 
-  // ── State ──────────────────────────────────────────────────
-  String selectedPeriod = '7 Days';
+  // State
+  String selectedPeriod = '7d';
 
   @override
   void initState() {
@@ -59,34 +58,39 @@ class _StatsScreenState extends State<StatsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return SlideTransition(
       position: _slideAnimation,
       child: FadeTransition(
         opacity: _fadeAnimation,
         child: Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: _buildAppBar(),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Period Selector ─────────────────────
+                // Period Selector
                 FadeInWidget(
                   delay: const Duration(milliseconds: 100),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
-                      children: ['7 Days', '30 Days', '90 Days', '1 Year']
-                          .asMap()
-                          .entries
-                          .map((entry) {
-                        final period = entry.value;
+                      children: [
+                        MapEntry('7d', l10n.last7Days),
+                        MapEntry('30d', l10n.last30Days),
+                        MapEntry('90d', l10n.last90Days),
+                        MapEntry('1y', l10n.last1Year),
+                      ].asMap().entries.map((entry) {
+                        final period = entry.value.key;
+                        final label = entry.value.value;
                         final index = entry.key;
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: _AnimatedPeriodChip(
-                            label: period,
+                            label: label,
                             isSelected: selectedPeriod == period,
                             onTap: () =>
                                 setState(() => selectedPeriod = period),
@@ -98,19 +102,19 @@ class _StatsScreenState extends State<StatsScreen>
                   ),
                 ),
                 const SizedBox(height: 24),
-                // ── Summary Cards ───────────────────────
+                // Summary Cards
                 FadeInWidget(
                   delay: const Duration(milliseconds: 200),
                   child: _buildSummaryCards(),
                 ),
                 const SizedBox(height: 24),
-                // ── Calories Trend ──────────────────────
+                // Calories Trend
                 FadeInWidget(
                   delay: const Duration(milliseconds: 300),
                   child: _buildTrendChart(),
                 ),
                 const SizedBox(height: 24),
-                // ── Macro Breakdown ─────────────────────
+                // Macro Breakdown
                 FadeInWidget(
                   delay: const Duration(milliseconds: 400),
                   child: _buildMacroBreakdown(),
@@ -126,11 +130,13 @@ class _StatsScreenState extends State<StatsScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final l10n = AppLocalizations.of(context)!;
+
     return AppBar(
       backgroundColor: AppColors.primary,
       elevation: 0,
-      title: const Text(
-        'Statistics',
+      title: Text(
+        l10n.statsTitle,
         style: TextStyle(
           color: Colors.white,
           fontSize: 18,
@@ -141,29 +147,36 @@ class _StatsScreenState extends State<StatsScreen>
   }
 
   Widget _buildSummaryCards() {
+    final l10n = AppLocalizations.of(context)!;
+    final surface = Theme.of(context).colorScheme.surface;
+    final textSecondary =
+        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72);
+    final borderColor =
+        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16);
+
     return Row(
       children: [
         Expanded(
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: borderColor),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Average Daily',
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  l10n.averageDaily,
+                  style: TextStyle(
+                    color: textSecondary,
                     fontSize: 11,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '2,180 kcal',
+                  '2,180 ${l10n.kcal}',
                   style: const TextStyle(
                     color: AppColors.primary,
                     fontSize: 18,
@@ -179,23 +192,23 @@ class _StatsScreenState extends State<StatsScreen>
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: borderColor),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Goal Remaining',
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  l10n.goalRemaining,
+                  style: TextStyle(
+                    color: textSecondary,
                     fontSize: 11,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '+520 kcal',
+                  '+520 ${l10n.kcal}',
                   style: const TextStyle(
                     color: Colors.green,
                     fontSize: 18,
@@ -211,13 +224,18 @@ class _StatsScreenState extends State<StatsScreen>
   }
 
   Widget _buildTrendChart() {
+    final l10n = AppLocalizations.of(context)!;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final surface = Theme.of(context).colorScheme.surface;
+    final borderColor = onSurface.withValues(alpha: 0.16);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Calorie Trend',
+        Text(
+          l10n.calorieTrend,
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: onSurface,
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -226,9 +244,9 @@ class _StatsScreenState extends State<StatsScreen>
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: borderColor),
           ),
           child: Column(
             children: [
@@ -237,37 +255,37 @@ class _StatsScreenState extends State<StatsScreen>
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   _buildBarChart(
-                    'Mon',
+                    l10n.mon,
                     2200,
                     0.85,
                   ),
                   _buildBarChart(
-                    'Tue',
+                    l10n.tue,
                     2000,
                     0.78,
                   ),
                   _buildBarChart(
-                    'Wed',
+                    l10n.wed,
                     2350,
                     0.90,
                   ),
                   _buildBarChart(
-                    'Thu',
+                    l10n.thu,
                     2150,
                     0.82,
                   ),
                   _buildBarChart(
-                    'Fri',
+                    l10n.fri,
                     2400,
                     0.92,
                   ),
                   _buildBarChart(
-                    'Sat',
+                    l10n.sat,
                     1900,
                     0.73,
                   ),
                   _buildBarChart(
-                    'Sun',
+                    l10n.sun,
                     2100,
                     0.81,
                   ),
@@ -280,11 +298,11 @@ class _StatsScreenState extends State<StatsScreen>
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Goal: 2,700 kcal/day',
+                  l10n.goalCaloriesPerDay('2,700'),
                   style: const TextStyle(
                     color: AppColors.primary,
                     fontSize: 12,
@@ -300,6 +318,9 @@ class _StatsScreenState extends State<StatsScreen>
   }
 
   Widget _buildBarChart(String label, int kcal, double progress) {
+    final textSecondary =
+        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72);
+
     return Column(
       children: [
         Container(
@@ -317,8 +338,8 @@ class _StatsScreenState extends State<StatsScreen>
         const SizedBox(height: 8),
         Text(
           label,
-          style: const TextStyle(
-            color: AppColors.textSecondary,
+          style: TextStyle(
+            color: textSecondary,
             fontSize: 11,
           ),
         ),
@@ -327,13 +348,18 @@ class _StatsScreenState extends State<StatsScreen>
   }
 
   Widget _buildMacroBreakdown() {
+    final l10n = AppLocalizations.of(context)!;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final surface = Theme.of(context).colorScheme.surface;
+    final borderColor = onSurface.withValues(alpha: 0.16);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Macro Breakdown (Average)',
+        Text(
+          l10n.macroBreakdownAverage,
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: onSurface,
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -342,9 +368,9 @@ class _StatsScreenState extends State<StatsScreen>
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: surface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: borderColor),
           ),
           child: Column(
             children: [
@@ -352,15 +378,17 @@ class _StatsScreenState extends State<StatsScreen>
                 children: [
                   Expanded(
                     flex: 1,
-                    child: _buildPieSegment(Colors.blue, 'Protein\n35%'),
+                    child:
+                        _buildPieSegment(Colors.blue, '${l10n.protein}\n35%'),
                   ),
                   Expanded(
                     flex: 1,
-                    child: _buildPieSegment(Colors.orange, 'Carbs\n45%'),
+                    child:
+                        _buildPieSegment(Colors.orange, '${l10n.carbs}\n45%'),
                   ),
                   Expanded(
                     flex: 1,
-                    child: _buildPieSegment(Colors.red, 'Fat\n20%'),
+                    child: _buildPieSegment(Colors.red, '${l10n.fat}\n20%'),
                   ),
                 ],
               ),
@@ -368,9 +396,9 @@ class _StatsScreenState extends State<StatsScreen>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildMacroInfo('Protein', '145g', Colors.blue),
-                  _buildMacroInfo('Carbs', '298g', Colors.orange),
-                  _buildMacroInfo('Fat', '66g', Colors.red),
+                  _buildMacroInfo(l10n.protein, '145g', Colors.blue),
+                  _buildMacroInfo(l10n.carbs, '298g', Colors.orange),
+                  _buildMacroInfo(l10n.fat, '66g', Colors.red),
                 ],
               ),
             ],
@@ -384,7 +412,7 @@ class _StatsScreenState extends State<StatsScreen>
     return Container(
       height: 100,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Center(
@@ -402,6 +430,9 @@ class _StatsScreenState extends State<StatsScreen>
   }
 
   Widget _buildMacroInfo(String name, String value, Color color) {
+    final textSecondary =
+        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72);
+
     return Column(
       children: [
         Container(
@@ -424,8 +455,8 @@ class _StatsScreenState extends State<StatsScreen>
         const SizedBox(height: 2),
         Text(
           name,
-          style: const TextStyle(
-            color: AppColors.textSecondary,
+          style: TextStyle(
+            color: textSecondary,
             fontSize: 10,
           ),
         ),
@@ -434,84 +465,20 @@ class _StatsScreenState extends State<StatsScreen>
   }
 
   Widget _buildBottomNav(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-        border: Border(
-          top: BorderSide(color: AppColors.border.withOpacity(0.5), width: 0.5),
-        ),
-      ),
-      child: BottomNavigationBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
-        selectedFontSize: 11,
-        unselectedFontSize: 11,
-        iconSize: 24,
-        currentIndex: 3,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.camera_alt_outlined),
-            activeIcon: Icon(Icons.camera_alt),
-            label: 'Scan',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
-            label: 'History',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart_outlined),
-            activeIcon: Icon(Icons.bar_chart),
-            label: 'Stats',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              context.go('/home');
-              break;
-            case 1:
-              context.go('/scan');
-              break;
-            case 2:
-              context.go('/history');
-              break;
-            case 3:
-              context.go('/stats');
-              break;
-            case 4:
-              context.go('/profile');
-              break;
-          }
-        },
-      ),
+    return AppBottomNav(
+      currentIndex: 3,
+      surfaceColor: Theme.of(context).colorScheme.surface,
+      borderColor:
+          Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16),
+      unselectedItemColor:
+          Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72),
     );
   }
 }
 
-// ═══════════════════════════════════════════════════════════
+// Helper widgets
 // HELPER WIDGETS
-// ═══════════════════════════════════════════════════════════
+// Helper widgets
 
 /// Animated period chip with scale feedback
 class _AnimatedPeriodChip extends StatefulWidget {
@@ -560,6 +527,11 @@ class _AnimatedPeriodChipState extends State<_AnimatedPeriodChip>
 
   @override
   Widget build(BuildContext context) {
+    final surface = Theme.of(context).colorScheme.surface;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final borderColor =
+        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16);
+
     return AnimatedBuilder(
       animation: _scaleAnimation,
       builder: (context, child) {
@@ -574,15 +546,15 @@ class _AnimatedPeriodChipState extends State<_AnimatedPeriodChip>
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: widget.isSelected ? AppColors.primary : AppColors.surface,
+            color: widget.isSelected ? AppColors.primary : surface,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: widget.isSelected ? AppColors.primary : AppColors.border,
+              color: widget.isSelected ? AppColors.primary : borderColor,
             ),
             boxShadow: widget.isSelected
                 ? [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
+                      color: AppColors.primary.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -592,7 +564,7 @@ class _AnimatedPeriodChipState extends State<_AnimatedPeriodChip>
           child: Text(
             widget.label,
             style: TextStyle(
-              color: widget.isSelected ? Colors.white : AppColors.textPrimary,
+              color: widget.isSelected ? Colors.white : onSurface,
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),

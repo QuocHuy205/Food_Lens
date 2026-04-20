@@ -9,8 +9,8 @@ class CalorieProgressBar extends StatelessWidget {
     required this.consumed,
     required this.target,
     this.label,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   Color get _color {
     final percentage = consumed / target;

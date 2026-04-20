@@ -86,6 +86,7 @@ class _CloudinaryTestScreenState extends State<CloudinaryTestScreen> {
           _isUploading = false;
         });
 
+        if (!mounted) return;
         debugPrint('✅ Upload SUCCESS: ${data['secure_url']}');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

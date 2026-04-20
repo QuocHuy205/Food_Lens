@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_lens/l10n/app_localizations.dart';
 
 class CalorieSummaryCard extends StatelessWidget {
   final double consumed;
@@ -7,19 +8,21 @@ class CalorieSummaryCard extends StatelessWidget {
   const CalorieSummaryCard({
     required this.consumed,
     required this.target,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Today\'s Calories',
+            Text(
+              l10n.todayCalories,
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
@@ -27,11 +30,10 @@ class CalorieSummaryCard extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    '${consumed.toStringAsFixed(0)} / ${target.toStringAsFixed(0)}',
+                    '${consumed.toStringAsFixed(0)} / ${target.toStringAsFixed(0)} ${l10n.kcal}',
                     style: const TextStyle(
                         fontSize: 24, fontWeight: FontWeight.bold),
                   ),
-                  const Text('kcal'),
                 ],
               ),
             ),

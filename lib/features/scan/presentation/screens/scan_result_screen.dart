@@ -1,18 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-// ── App Colors ─────────────────────────────────────────────
-class AppColors {
-  static const Color primary = Color(0xFF2E7D32);
-  static const Color primaryDark = Color(0xFF1B5E20);
-  static const Color accent = Color(0xFFFF6F00);
-  static const Color background = Color(0xFFF5F5F5);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color border = Color(0xFFE0E0E0);
-  static const Color success = Color(0xFF43A047);
-}
+import 'package:food_lens/l10n/app_localizations.dart';
+import 'package:food_lens/core/theme/app_colors.dart';
+import 'package:food_lens/core/widgets/app_bottom_nav.dart';
 
 class ScanResultScreen extends StatefulWidget {
   const ScanResultScreen({super.key});
@@ -67,7 +57,7 @@ class _ScanResultScreenState extends State<ScanResultScreen>
       child: FadeTransition(
         opacity: _fadeAnimation,
         child: Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: _buildAppBar(),
           body: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -75,19 +65,19 @@ class _ScanResultScreenState extends State<ScanResultScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 16),
-                // ── Food Image ──────────────────────────
+                // Food Image
                 _buildFoodImage(),
                 const SizedBox(height: 20),
-                // ── Food Info ────────────────────────────
+                // Food Info
                 _buildFoodInfo(),
                 const SizedBox(height: 20),
-                // ── Quantity Selector ───────────────────
+                // Quantity Selector
                 _buildQuantitySelector(),
                 const SizedBox(height: 20),
-                // ── Nutrition Breakdown ─────────────────
+                // Nutrition Breakdown
                 _buildNutritionBreakdown(),
                 const SizedBox(height: 24),
-                // ── Save Button ──────────────────────────
+                // Save Button
                 _buildSaveButton(),
                 const SizedBox(height: 20),
               ],
@@ -99,12 +89,25 @@ class _ScanResultScreenState extends State<ScanResultScreen>
     );
   }
 
+  Color _surface(BuildContext context) => Theme.of(context).colorScheme.surface;
+
+  Color _onSurface(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurface;
+
+  Color _mutedText(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72);
+
+  Color _border(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16);
+
   PreferredSizeWidget _buildAppBar() {
+    final l10n = AppLocalizations.of(context)!;
+
     return AppBar(
       backgroundColor: AppColors.primary,
       elevation: 0,
-      title: const Text(
-        'Scan Result',
+      title: Text(
+        l10n.scanResultTitle,
         style: TextStyle(
           color: Colors.white,
           fontSize: 18,
@@ -128,18 +131,21 @@ class _ScanResultScreenState extends State<ScanResultScreen>
   }
 
   Widget _buildFoodImage() {
+    final l10n = AppLocalizations.of(context)!;
+    final textSecondary = _mutedText(context);
+
     return Container(
       width: double.infinity,
       height: 240,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: _surface(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border, width: 1),
+        border: Border.all(color: _border(context), width: 1),
       ),
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // ── Placeholder image ───────────────────
+          // Placeholder image
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
@@ -147,24 +153,25 @@ class _ScanResultScreenState extends State<ScanResultScreen>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppColors.primary.withOpacity(0.1),
-                  AppColors.primary.withOpacity(0.05),
+                  AppColors.primary.withValues(alpha: 0.1),
+                  AppColors.primary.withValues(alpha: 0.05),
                 ],
               ),
             ),
-            child: const Center(
+            child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    '🥗',
-                    style: TextStyle(fontSize: 80),
+                  Icon(
+                    Icons.breakfast_dining,
+                    size: 78,
+                    color: AppColors.primary.withValues(alpha: 0.85),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text(
-                    'Avocado Toast',
+                    l10n.sampleFoodName,
                     style: TextStyle(
-                      color: AppColors.textSecondary,
+                      color: textSecondary,
                       fontSize: 14,
                     ),
                   ),
@@ -172,7 +179,7 @@ class _ScanResultScreenState extends State<ScanResultScreen>
               ),
             ),
           ),
-          // ── Confidence badge ────────────────────
+          // Confidence badge
           Positioned(
             top: 12,
             right: 12,
@@ -182,9 +189,9 @@ class _ScanResultScreenState extends State<ScanResultScreen>
                 color: AppColors.success,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Text(
-                '92% Match',
-                style: TextStyle(
+              child: Text(
+                AppLocalizations.of(context)!.matchPercent('92'),
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -198,13 +205,17 @@ class _ScanResultScreenState extends State<ScanResultScreen>
   }
 
   Widget _buildFoodInfo() {
+    final l10n = AppLocalizations.of(context)!;
+    final textPrimary = _onSurface(context);
+    final textSecondary = _mutedText(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Food Identified: Avocado Toast',
+        Text(
+          l10n.foodIdentifiedPrefix(l10n.sampleFoodName),
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: textPrimary,
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -213,26 +224,26 @@ class _ScanResultScreenState extends State<ScanResultScreen>
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.primary, width: 1),
           ),
-          child: const Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Total Calories',
+                    l10n.totalCalories,
                     style: TextStyle(
-                      color: AppColors.textSecondary,
+                      color: textSecondary,
                       fontSize: 11,
                     ),
                   ),
                   SizedBox(height: 4),
                   Text(
-                    '350 kcal',
+                    '350 ${l10n.kcal}',
                     style: TextStyle(
                       color: AppColors.primary,
                       fontSize: 18,
@@ -245,9 +256,9 @@ class _ScanResultScreenState extends State<ScanResultScreen>
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    'Portion Size',
+                    l10n.portionSize,
                     style: TextStyle(
-                      color: AppColors.textSecondary,
+                      color: textSecondary,
                       fontSize: 11,
                     ),
                   ),
@@ -270,13 +281,16 @@ class _ScanResultScreenState extends State<ScanResultScreen>
   }
 
   Widget _buildQuantitySelector() {
+    final l10n = AppLocalizations.of(context)!;
+    final textPrimary = _onSurface(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Quantity',
+        Text(
+          l10n.quantity,
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: textPrimary,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
@@ -284,13 +298,13 @@ class _ScanResultScreenState extends State<ScanResultScreen>
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: _surface(context),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border, width: 1),
+            border: Border.all(color: _border(context), width: 1),
           ),
           child: Row(
             children: [
-              // ── Minus button ────────────────────────
+              // Minus button
               GestureDetector(
                 onTap: () {
                   setState(() {
@@ -306,20 +320,20 @@ class _ScanResultScreenState extends State<ScanResultScreen>
                   ),
                 ),
               ),
-              // ── Quantity display ────────────────────
+              // Quantity display
               Expanded(
                 child: Center(
                   child: Text(
                     '$quantity',
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
+                    style: TextStyle(
+                      color: textPrimary,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ),
-              // ── Plus button ─────────────────────────
+              // Plus button
               GestureDetector(
                 onTap: () {
                   setState(() {
@@ -343,13 +357,16 @@ class _ScanResultScreenState extends State<ScanResultScreen>
   }
 
   Widget _buildNutritionBreakdown() {
+    final l10n = AppLocalizations.of(context)!;
+    final textPrimary = _onSurface(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Nutrition Facts (per serving)',
+        Text(
+          l10n.nutritionFactsPerServing,
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: textPrimary,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
@@ -358,19 +375,19 @@ class _ScanResultScreenState extends State<ScanResultScreen>
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: _surface(context),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border, width: 1),
+            border: Border.all(color: _border(context), width: 1),
           ),
           child: Column(
             children: [
-              _buildNutritionRow('Protein', '12g', Colors.blue),
+              _buildNutritionRow(l10n.protein, '12g', Colors.blue),
               const Divider(height: 16),
-              _buildNutritionRow('Carbohydrates', '35g', Colors.orange),
+              _buildNutritionRow(l10n.carbs, '35g', Colors.orange),
               const Divider(height: 16),
-              _buildNutritionRow('Fat', '18g', Colors.red),
+              _buildNutritionRow(l10n.fat, '18g', Colors.red),
               const Divider(height: 16),
-              _buildNutritionRow('Fiber', '5g', Colors.green),
+              _buildNutritionRow(l10n.fiber, '5g', Colors.green),
             ],
           ),
         ),
@@ -379,6 +396,8 @@ class _ScanResultScreenState extends State<ScanResultScreen>
   }
 
   Widget _buildNutritionRow(String label, String value, Color color) {
+    final textPrimary = _onSurface(context);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -395,8 +414,8 @@ class _ScanResultScreenState extends State<ScanResultScreen>
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
+              style: TextStyle(
+                color: textPrimary,
                 fontSize: 13,
               ),
             ),
@@ -404,8 +423,8 @@ class _ScanResultScreenState extends State<ScanResultScreen>
         ),
         Text(
           value,
-          style: const TextStyle(
-            color: AppColors.textPrimary,
+          style: TextStyle(
+            color: textPrimary,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
@@ -415,12 +434,13 @@ class _ScanResultScreenState extends State<ScanResultScreen>
   }
 
   Widget _buildSaveButton() {
+    final l10n = AppLocalizations.of(context)!;
     return GestureDetector(
       onTap: () {
         // TODO: Save to history
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('✅ Saved to history!'),
+            content: Text(l10n.savedToHistory),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -439,16 +459,16 @@ class _ScanResultScreenState extends State<ScanResultScreen>
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.3),
+              color: AppColors.primary.withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 6),
             ),
           ],
         ),
-        child: const Center(
+        child: Center(
           child: Text(
-            'Save to History',
-            style: TextStyle(
+            l10n.saveToHistory,
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -460,76 +480,11 @@ class _ScanResultScreenState extends State<ScanResultScreen>
   }
 
   Widget _buildBottomNav(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-        border: Border(
-          top: BorderSide(color: AppColors.border.withOpacity(0.5), width: 0.5),
-        ),
-      ),
-      child: BottomNavigationBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
-        selectedFontSize: 11,
-        unselectedFontSize: 11,
-        iconSize: 24,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.camera_alt_outlined),
-            activeIcon: Icon(Icons.camera_alt),
-            label: 'Scan',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
-            label: 'History',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart_outlined),
-            activeIcon: Icon(Icons.bar_chart),
-            label: 'Stats',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              context.go('/home');
-              break;
-            case 1:
-              context.go('/scan');
-              break;
-            case 2:
-              context.go('/history');
-              break;
-            case 3:
-              context.go('/stats');
-              break;
-            case 4:
-              context.go('/profile');
-              break;
-          }
-        },
-      ),
+    return AppBottomNav(
+      currentIndex: 1,
+      surfaceColor: _surface(context),
+      borderColor: _border(context),
+      unselectedItemColor: _mutedText(context),
     );
   }
 }

@@ -1,25 +1,14 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:food_lens/l10n/app_localizations.dart';
+import 'package:food_lens/core/theme/app_colors.dart';
+import 'package:food_lens/core/widgets/app_bottom_nav.dart';
 
 import '../../../profile/domain/entities/user_profile.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
-
-// ── App Colors (shared constant) ─────────────────────────────
-class AppColors {
-  static const Color primary = Color(0xFF2E7D32);
-  static const Color primaryDark = Color(0xFF1B5E20);
-  static const Color accent = Color(0xFFFF6F00);
-  static const Color background = Color(0xFFF5F5F5);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color error = Color(0xFFD32F2F);
-  static const Color border = Color(0xFFE0E0E0);
-  static const Color success = Color(0xFF43A047);
-}
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -91,6 +80,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final profileState = ref.watch(profileViewModelProvider);
     final profile = profileState.profile.valueOrNull;
 
@@ -99,21 +89,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       child: FadeTransition(
         opacity: _fadeAnimation,
         child: Scaffold(
-          backgroundColor: AppColors.background,
-          appBar: _buildAppBar(profile),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: _buildAppBar(profile, l10n),
           body: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 16),
-                // ── Greeting Card ──────────────────────────
+                // Greeting Card
                 _buildGreetingCard(profile),
                 const SizedBox(height: 20),
-                // ── Calorie Summary Card ───────────────────
+                // Calorie Summary Card
                 _buildCalorieSummaryCard(),
                 const SizedBox(height: 20),
-                // ── Recent Scans ──────────────────────────
+                // Recent Scans
                 _buildRecentScans(),
                 const SizedBox(height: 24),
               ],
@@ -126,7 +116,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  PreferredSizeWidget _buildAppBar(UserProfile? profile) {
+  Color _surface(BuildContext context) => Theme.of(context).colorScheme.surface;
+
+  Color _onSurface(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurface;
+
+  Color _mutedText(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72);
+
+  Color _border(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16);
+
+  PreferredSizeWidget _buildAppBar(
+      UserProfile? profile, AppLocalizations l10n) {
     final initials = _resolveDisplayName(profile).isNotEmpty
         ? _resolveDisplayName(profile).substring(0, 1).toUpperCase()
         : 'U';
@@ -134,8 +136,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return AppBar(
       backgroundColor: AppColors.primary,
       elevation: 0,
-      title: const Text(
-        'Food Lens',
+      title: Text(
+        l10n.appName,
         style: TextStyle(
           color: Colors.white,
           fontSize: 18,
@@ -149,7 +151,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           child: GestureDetector(
             onTap: () => context.go('/profile'),
             child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.2),
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
               child: ClipOval(
                 child:
                     profile?.photoUrl != null && profile!.photoUrl!.isNotEmpty
@@ -182,42 +184,140 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _buildGreetingCard(UserProfile? profile) {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = _onSurface(context);
+    final textSecondary = _mutedText(context);
     final displayName = _resolveDisplayName(profile);
     final formattedDate = DateFormat('d MMMM y').format(DateTime.now());
+    final hour = DateTime.now().hour;
+    final salutation = hour < 12
+        ? l10n.goodMorning
+        : hour < 18
+            ? l10n.goodAfternoon
+            : l10n.goodEvening;
+    final focusLabel = hour < 11
+        ? l10n.focusNutritiousBreakfast
+        : hour < 16
+            ? l10n.focusBalancedLunch
+            : l10n.focusLightDinner;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border, width: 1),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? const [Color(0xFF243A2D), Color(0xFF1E3226)]
+              : const [Color(0xFFEDF8EF), Color(0xFFD9F0DD)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? _border(context) : const Color(0xFFCDE5D0),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1B5E20).withValues(alpha: 0.10),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Hi, $displayName! 👋',
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Today • $formattedDate',
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 12,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2E7D32).withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        '$salutation, $displayName',
+                        style: const TextStyle(
+                          color: Color(0xFF1F5F25),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      l10n.hiName(displayName),
+                      style: TextStyle(
+                        color: textPrimary,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      formattedDate,
+                      style: TextStyle(
+                        color: textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const Icon(Icons.calendar_today,
-              color: AppColors.textSecondary, size: 24),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : Colors.white.withValues(alpha: 0.72),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isDark ? _border(context) : const Color(0xFFD4E8D7),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.auto_awesome,
+                  color: Color(0xFF2E7D32),
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    focusLabel,
+                    style: TextStyle(
+                      color: isDark ? textPrimary : const Color(0xFF245D2A),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Text(
+                  'On track',
+                  style: TextStyle(
+                    color: const Color(0xFF2E7D32).withValues(alpha: 0.86),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -244,6 +344,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _buildCalorieSummaryCard() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -255,7 +356,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -264,9 +365,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Header ────────────────────────────────
-          const Text(
-            'Daily Calories',
+          // Header
+          Text(
+            l10n.dailyCalories,
             style: TextStyle(
               color: Colors.white70,
               fontSize: 13,
@@ -275,7 +376,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
           ),
           const SizedBox(height: 12),
-          // ── Big Number ────────────────────────────
+          // Big Number
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -297,16 +398,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ],
           ),
           const SizedBox(height: 16),
-          // ── Progress Bar ──────────────────────────
+          // Progress Bar
           _buildProgressBar(),
           const SizedBox(height: 16),
-          // ── Macros ────────────────────────────────
+          // Macros
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildMacroItem('Protein', '65g', Colors.white),
-              _buildMacroItem('Carbs', '180g', Colors.white),
-              _buildMacroItem('Fat', '45g', Colors.white),
+              _buildMacroItem(l10n.protein, '65g', Colors.white),
+              _buildMacroItem(l10n.carbs, '180g', Colors.white),
+              _buildMacroItem(l10n.fat, '45g', Colors.white),
             ],
           ),
         ],
@@ -320,15 +421,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       children: [
         Stack(
           children: [
-            // ── Background bar ──────────────────────
+            // Background bar
             Container(
               height: 8,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
-            // ── Animated bar ─────────────────────────
+            // Animated bar
             AnimatedBuilder(
               animation: _progressController,
               builder: (context, child) {
@@ -372,7 +473,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         Text(
           label,
           style: TextStyle(
-            color: color.withOpacity(0.7),
+            color: color.withValues(alpha: 0.7),
             fontSize: 11,
           ),
         ),
@@ -381,25 +482,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _buildRecentScans() {
+    final textPrimary = _onSurface(context);
+    final l10n = AppLocalizations.of(context)!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Header ────────────────────────────────
+        // Header
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Recent Scans',
+            Text(
+              l10n.recentScans,
               style: TextStyle(
-                color: AppColors.textPrimary,
+                color: textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
             ),
             GestureDetector(
               onTap: () => context.go('/history'),
-              child: const Text(
-                'View All →',
+              child: Text(
+                l10n.viewAll,
                 style: TextStyle(
                   color: AppColors.primary,
                   fontSize: 12,
@@ -410,26 +514,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ],
         ),
         const SizedBox(height: 12),
-        // ── Scan Items ────────────────────────────
+        // Scan Items
         _buildScanItem(
           'Fresh Tuna Poke Bowl',
           '340 cal',
-          'Lunch • 12:30 PM',
-          '🍱',
+          '${l10n.lunch} • 12:30 PM',
+          Icons.ramen_dining,
         ),
         const SizedBox(height: 10),
         _buildScanItem(
           'Berry Almond Oatmeal',
           '380 cal',
-          'Breakfast • 8:15 AM',
-          '🥣',
+          '${l10n.breakfast} • 8:15 AM',
+          Icons.breakfast_dining,
         ),
         const SizedBox(height: 10),
         _buildScanItem(
           'Detox Green Juice',
           '120 cal',
-          'Snack • 3:45 PM',
-          '🥤',
+          '${l10n.snack} • 3:45 PM',
+          Icons.local_drink,
         ),
       ],
     );
@@ -439,29 +543,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     String title,
     String calories,
     String time,
-    String emoji,
+    IconData icon,
   ) {
+    final textPrimary = _onSurface(context);
+    final textSecondary = _mutedText(context);
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: _surface(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border, width: 1),
+        border: Border.all(color: _border(context), width: 1),
       ),
       child: Row(
         children: [
-          // ── Emoji Icon ────────────────────────────
-          Text(emoji, style: const TextStyle(fontSize: 28)),
+          // Food Icon
+          Icon(icon, size: 28, color: AppColors.primary),
           const SizedBox(width: 12),
-          // ── Info ────────────────────────────────
+          // Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: textPrimary,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -469,15 +576,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 const SizedBox(height: 2),
                 Text(
                   time,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
+                    color: textSecondary,
                     fontSize: 11,
                   ),
                 ),
               ],
             ),
           ),
-          // ── Calories ────────────────────────────
+          // Calories
           Text(
             calories,
             style: const TextStyle(
@@ -501,77 +608,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _buildBottomNav(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-        border: Border(
-          top: BorderSide(color: AppColors.border.withOpacity(0.5), width: 0.5),
-        ),
-      ),
-      child: BottomNavigationBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
-        selectedFontSize: 11,
-        unselectedFontSize: 11,
-        iconSize: 24,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.camera_alt_outlined),
-            activeIcon: Icon(Icons.camera_alt),
-            label: 'Scan',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
-            label: 'History',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart_outlined),
-            activeIcon: Icon(Icons.bar_chart),
-            label: 'Stats',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-        onTap: (index) {
-          // Sử dụng replace để tránh tạo thêm route mới
-          switch (index) {
-            case 0:
-              context.go('/home');
-              break;
-            case 1:
-              context.go('/scan');
-              break;
-            case 2:
-              context.go('/history');
-              break;
-            case 3:
-              context.go('/stats');
-              break;
-            case 4:
-              context.go('/profile');
-              break;
-          }
-        },
-      ),
+    return AppBottomNav(
+      currentIndex: 0,
+      surfaceColor: _surface(context),
+      borderColor: _border(context),
+      unselectedItemColor: _mutedText(context),
     );
   }
 }

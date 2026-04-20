@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -11,9 +12,9 @@ class CloudinaryService {
     final uploadPreset = dotenv.env['CLOUDINARY_UPLOAD_PRESET'];
 
     if (cloudName == null || uploadPreset == null) {
-      print("❌ Cloudinary ENV chưa load hoặc thiếu key");
-      print("   - CLOUDINARY_CLOUD_NAME: $cloudName");
-      print("   - CLOUDINARY_UPLOAD_PRESET: $uploadPreset");
+      debugPrint("❌ Cloudinary ENV chưa load hoặc thiếu key");
+      debugPrint("   - CLOUDINARY_CLOUD_NAME: $cloudName");
+      debugPrint("   - CLOUDINARY_UPLOAD_PRESET: $uploadPreset");
       return null;
     }
 
@@ -36,11 +37,11 @@ class CloudinaryService {
       final resData = await response.stream.bytesToString();
       final jsonData = json.decode(resData);
 
-      print("UPLOAD SUCCESS: ${jsonData['secure_url']}");
+      debugPrint("UPLOAD SUCCESS: ${jsonData['secure_url']}");
 
       return jsonData['secure_url'];
     } else {
-      print("UPLOAD FAILED: ${response.statusCode}");
+      debugPrint("UPLOAD FAILED: ${response.statusCode}");
       return null;
     }
   }

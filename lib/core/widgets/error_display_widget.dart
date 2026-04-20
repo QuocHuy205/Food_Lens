@@ -7,8 +7,8 @@ class ErrorDisplayWidget extends StatelessWidget {
   const ErrorDisplayWidget({
     required this.message,
     this.onRetry,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {

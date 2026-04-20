@@ -7,8 +7,8 @@ class HomeShell extends StatefulWidget {
   const HomeShell({
     required this.selectedIndex,
     required this.onIndexChanged,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   State<HomeShell> createState() => _HomeShellState();

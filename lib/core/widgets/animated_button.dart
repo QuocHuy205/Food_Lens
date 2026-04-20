@@ -114,13 +114,13 @@ class AnimatedPrimaryButton extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             color: onPressed == null
-                ? AppColors.primary.withOpacity(0.5)
+                ? AppColors.primary.withValues(alpha: 0.5)
                 : AppColors.primary,
             borderRadius: BorderRadius.circular(12),
             boxShadow: onPressed != null
                 ? [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
+                      color: AppColors.primary.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),

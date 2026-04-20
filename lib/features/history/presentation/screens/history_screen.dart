@@ -1,12 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:food_lens/l10n/app_localizations.dart';
 import 'package:food_lens/core/theme/app_colors.dart';
 import 'package:food_lens/core/widgets/animated_widgets.dart';
+import 'package:food_lens/core/widgets/app_bottom_nav.dart';
 
-// ═══════════════════════════════════════════════════════════
-// HISTORY SCREEN — With animations
+// HISTORY SCREEN - With animations
 // Refactored: Page enter + staggered list + animated filter chips
-// ═══════════════════════════════════════════════════════════
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -17,71 +16,71 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen>
     with TickerProviderStateMixin {
-  // ── Animation Controllers ──────────────────────────────────
+  // Animation controllers
   late AnimationController _pageEnterController;
   late AnimationController _listItemController;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
 
-  // ── State ──────────────────────────────────────────────────
-  String selectedFilter = 'Today';
+  // State
+  String selectedFilter = 'today';
   final searchController = TextEditingController();
   final List<Map<String, dynamic>> _historyItems = [
     {
-      'emoji': '🍜',
+      'icon': Icons.ramen_dining,
       'name': 'Fresh Tuna Poke Bowl',
-      'time': 'Lunch • 12:30 PM',
+      'time': '12:30 PM',
       'calories': 340,
-      'type': 'Lunch'
+      'type': 'lunch'
     },
     {
-      'emoji': '🥗',
+      'icon': Icons.eco,
       'name': 'Avocado Salad',
-      'time': 'Dinner • 7:15 PM',
+      'time': '7:15 PM',
       'calories': 280,
-      'type': 'Dinner'
+      'type': 'dinner'
     },
     {
-      'emoji': '🍳',
+      'icon': Icons.egg_alt,
       'name': 'Scrambled Eggs',
-      'time': 'Breakfast • 8:00 AM',
+      'time': '8:00 AM',
       'calories': 180,
-      'type': 'Breakfast'
+      'type': 'breakfast'
     },
     {
-      'emoji': '🍎',
+      'icon': Icons.apple,
       'name': 'Apple & Almonds',
-      'time': 'Snack • 3:30 PM',
+      'time': '3:30 PM',
       'calories': 120,
-      'type': 'Snack'
+      'type': 'snack'
     },
     {
-      'emoji': '🥪',
+      'icon': Icons.lunch_dining,
       'name': 'Turkey Sandwich',
-      'time': 'Lunch • 12:00 PM',
+      'time': '12:00 PM',
       'calories': 320,
-      'type': 'Lunch'
+      'type': 'lunch'
     },
     {
-      'emoji': '🍌',
+      'icon': Icons.local_drink,
       'name': 'Banana Smoothie',
-      'time': 'Breakfast • 7:30 AM',
+      'time': '7:30 AM',
       'calories': 200,
-      'type': 'Breakfast'
+      'type': 'breakfast'
     },
     {
-      'emoji': '🍗',
+      'icon': Icons.outdoor_grill,
       'name': 'Grilled Chicken',
-      'time': 'Dinner • 6:45 PM',
+      'time': '6:45 PM',
       'calories': 250,
-      'type': 'Dinner'
+      'type': 'dinner'
     },
     {
-      'emoji': '🥕',
+      'icon': Icons.spa,
       'name': 'Carrot Sticks',
-      'time': 'Snack • 4:00 PM',
+      'time': '4:00 PM',
       'calories': 35,
-      'type': 'Snack'
+      'type': 'snack'
     },
   ];
 
@@ -128,17 +127,23 @@ class _HistoryScreenState extends State<HistoryScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final textSecondary =
+        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72);
+    final borderColor =
+        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16);
+
     return SlideTransition(
       position: _slideAnimation,
       child: FadeTransition(
         opacity: _fadeAnimation,
         child: Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: _buildAppBar(),
           body: SingleChildScrollView(
             child: Column(
               children: [
-                // ── Search Bar ───────────────────────────
+                // Search Bar
                 FadeInWidget(
                   delay: const Duration(milliseconds: 100),
                   child: Padding(
@@ -146,20 +151,19 @@ class _HistoryScreenState extends State<HistoryScreen>
                     child: TextField(
                       controller: searchController,
                       decoration: InputDecoration(
-                        hintText: 'Search your history...',
-                        prefixIcon: const Icon(Icons.search,
-                            color: AppColors.textSecondary),
+                        hintText: l10n.searchHistoryPlaceholder,
+                        prefixIcon: Icon(Icons.search, color: textSecondary),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.border),
+                          borderSide: BorderSide(color: borderColor),
                         ),
                         filled: true,
-                        fillColor: AppColors.surface,
+                        fillColor: Theme.of(context).colorScheme.surface,
                       ),
                     ),
                   ),
                 ),
-                // ── Filter Chips ─────────────────────────
+                // Filter Chips
                 FadeInWidget(
                   delay: const Duration(milliseconds: 150),
                   child: SingleChildScrollView(
@@ -167,17 +171,18 @@ class _HistoryScreenState extends State<HistoryScreen>
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
-                        'Today',
-                        'Yesterday',
-                        'Last 7 Days',
-                        'Last 30 Days'
+                        {'key': 'today', 'label': l10n.today},
+                        {'key': 'yesterday', 'label': l10n.yesterday},
+                        {'key': 'last7Days', 'label': l10n.last7Days},
+                        {'key': 'last30Days', 'label': l10n.last30Days},
                       ].asMap().entries.map((entry) {
-                        final filter = entry.value;
+                        final filter = entry.value['key'] as String;
+                        final label = entry.value['label'] as String;
                         final index = entry.key;
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: _AnimatedFilterChip(
-                            label: filter,
+                            label: label,
                             isSelected: selectedFilter == filter,
                             onTap: () =>
                                 setState(() => selectedFilter = filter),
@@ -189,7 +194,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                   ),
                 ),
                 const SizedBox(height: 16),
-                // ── History List ────────────────────────
+                // History List
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: ListView.builder(
@@ -206,9 +211,9 @@ class _HistoryScreenState extends State<HistoryScreen>
                           onDismissed: (direction) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('Scan deleted'),
+                                content: Text(l10n.scanDeleted),
                                 action: SnackBarAction(
-                                  label: 'UNDO',
+                                  label: l10n.undo,
                                   onPressed: () {},
                                 ),
                               ),
@@ -226,9 +231,10 @@ class _HistoryScreenState extends State<HistoryScreen>
                                 const Icon(Icons.delete, color: Colors.white),
                           ),
                           child: _HistoryListItem(
-                            emoji: item['emoji'],
+                            icon: item['icon'],
                             name: item['name'],
-                            time: item['time'],
+                            time:
+                                '${_localizedMealType(context, item['type'])} • ${item['time']}',
                             calories: item['calories'],
                             type: item['type'],
                           ),
@@ -248,11 +254,13 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final l10n = AppLocalizations.of(context)!;
+
     return AppBar(
       backgroundColor: AppColors.primary,
       elevation: 0,
-      title: const Text(
-        'History',
+      title: Text(
+        l10n.historyTitle,
         style: TextStyle(
           color: Colors.white,
           fontSize: 18,
@@ -263,84 +271,18 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 
   Widget _buildBottomNav(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-        border: Border(
-          top: BorderSide(color: AppColors.border.withOpacity(0.5), width: 0.5),
-        ),
-      ),
-      child: BottomNavigationBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
-        selectedFontSize: 11,
-        unselectedFontSize: 11,
-        iconSize: 24,
-        currentIndex: 2,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.camera_alt_outlined),
-            activeIcon: Icon(Icons.camera_alt),
-            label: 'Scan',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
-            label: 'History',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart_outlined),
-            activeIcon: Icon(Icons.bar_chart),
-            label: 'Stats',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              context.go('/home');
-              break;
-            case 1:
-              context.go('/scan');
-              break;
-            case 2:
-              context.go('/history');
-              break;
-            case 3:
-              context.go('/stats');
-              break;
-            case 4:
-              context.go('/profile');
-              break;
-          }
-        },
-      ),
+    return AppBottomNav(
+      currentIndex: 2,
+      surfaceColor: Theme.of(context).colorScheme.surface,
+      borderColor:
+          Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16),
+      unselectedItemColor:
+          Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72),
     );
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// HELPER WIDGETS — Reusable animated components
-// ═══════════════════════════════════════════════════════════
+// Helper widgets
 
 /// Animated filter chip with scale feedback
 class _AnimatedFilterChip extends StatefulWidget {
@@ -390,6 +332,11 @@ class _AnimatedFilterChipState extends State<_AnimatedFilterChip>
 
   @override
   Widget build(BuildContext context) {
+    final surface = Theme.of(context).colorScheme.surface;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final borderColor =
+        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16);
+
     return AnimatedBuilder(
       animation: _scaleAnimation,
       builder: (context, child) {
@@ -404,15 +351,15 @@ class _AnimatedFilterChipState extends State<_AnimatedFilterChip>
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: widget.isSelected ? AppColors.primary : AppColors.surface,
+            color: widget.isSelected ? AppColors.primary : surface,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: widget.isSelected ? AppColors.primary : AppColors.border,
+              color: widget.isSelected ? AppColors.primary : borderColor,
             ),
             boxShadow: widget.isSelected
                 ? [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
+                      color: AppColors.primary.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -422,7 +369,7 @@ class _AnimatedFilterChipState extends State<_AnimatedFilterChip>
           child: Text(
             widget.label,
             style: TextStyle(
-              color: widget.isSelected ? Colors.white : AppColors.textPrimary,
+              color: widget.isSelected ? Colors.white : onSurface,
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -435,14 +382,14 @@ class _AnimatedFilterChipState extends State<_AnimatedFilterChip>
 
 /// History list item with consistent styling
 class _HistoryListItem extends StatelessWidget {
-  final String emoji;
+  final IconData icon;
   final String name;
   final String time;
   final int calories;
   final String type;
 
   const _HistoryListItem({
-    required this.emoji,
+    required this.icon,
     required this.name,
     required this.time,
     required this.calories,
@@ -451,13 +398,18 @@ class _HistoryListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final surface = Theme.of(context).colorScheme.surface;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final textSecondary = onSurface.withValues(alpha: 0.72);
+    final borderColor = onSurface.withValues(alpha: 0.16);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: borderColor),
       ),
       child: Row(
         children: [
@@ -466,12 +418,11 @@ class _HistoryListItem extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Center(
-              child: Text(emoji, style: const TextStyle(fontSize: 28)),
-            ),
+            child:
+                Center(child: Icon(icon, size: 30, color: AppColors.primary)),
           ),
           const SizedBox(width: 12),
           // Info
@@ -481,8 +432,8 @@ class _HistoryListItem extends StatelessWidget {
               children: [
                 Text(
                   name,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: onSurface,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -490,8 +441,8 @@ class _HistoryListItem extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   time,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
+                    color: textSecondary,
                     fontSize: 12,
                   ),
                 ),
@@ -514,7 +465,7 @@ class _HistoryListItem extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: _getTypeColor(type).withOpacity(0.1),
+                  color: _getTypeColor(type).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -535,16 +486,32 @@ class _HistoryListItem extends StatelessWidget {
 
   Color _getTypeColor(String type) {
     switch (type) {
-      case 'Breakfast':
+      case 'breakfast':
         return const Color(0xFFFF9800);
-      case 'Lunch':
+      case 'lunch':
         return const Color(0xFF2196F3);
-      case 'Dinner':
+      case 'dinner':
         return const Color(0xFF9C27B0);
-      case 'Snack':
+      case 'snack':
         return const Color(0xFF4CAF50);
       default:
         return AppColors.textSecondary;
     }
+  }
+}
+
+String _localizedMealType(BuildContext context, String type) {
+  final l10n = AppLocalizations.of(context)!;
+  switch (type) {
+    case 'breakfast':
+      return l10n.breakfast;
+    case 'lunch':
+      return l10n.lunch;
+    case 'dinner':
+      return l10n.dinner;
+    case 'snack':
+      return l10n.snack;
+    default:
+      return type;
   }
 }

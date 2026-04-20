@@ -1,5 +1,5 @@
-// ============================================================
-// 📱 SCREEN 02 — LoginScreen
+﻿// ============================================================
+// SCREEN 02 - LoginScreen
 // File: lib/screens/login_screen.dart
 // Route: /login
 // ============================================================
@@ -8,21 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_logo.dart';
 import '../providers/auth_provider.dart';
-
-// ── App Colors (shared constant) ─────────────────────────────
-class AppColors {
-  static const Color primary = Color(0xFF2E7D32);
-  static const Color primaryDark = Color(0xFF1B5E20);
-  static const Color accent = Color(0xFFFF6F00);
-  static const Color background = Color(0xFFF5F5F5);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color error = Color(0xFFD32F2F);
-  static const Color border = Color(0xFFE0E0E0);
-}
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -33,7 +21,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen>
     with TickerProviderStateMixin {
-  // ── Form ──────────────────────────────────────────────────
+  // Form
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -44,14 +32,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   bool _isLoading = false;
   String? _errorMessage;
 
-  // ── Animation Controllers ──────────────────────────────────
+  // Animation controllers
   late AnimationController _pageEnterController;
   late AnimationController _buttonController;
   late AnimationController _errorShakeController;
   late AnimationController _emailFocusController;
   late AnimationController _passwordFocusController;
 
-  // ── Animations ─────────────────────────────────────────────
+  // Animations
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<double> _buttonScale;
@@ -88,7 +76,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       CurvedAnimation(parent: _pageEnterController, curve: Curves.easeOut),
     );
 
-    // Button press: scale 1.0 → 0.98 (100ms)
+    // Button press: scale 1.0 -> 0.98 (100ms)
     _buttonController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 100),
@@ -250,7 +238,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       child: FadeTransition(
         opacity: _fadeAnimation,
         child: Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -261,20 +249,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   children: [
                     const SizedBox(height: 48),
 
-                    // ── Header / Logo ─────────────────────
+                    // Header / Logo
                     _buildHeader(),
 
                     const SizedBox(height: 40),
 
-                    // ── Email Field ───────────────────────
+                    // Email Field
                     _buildEmailField(),
 
                     const SizedBox(height: 16),
 
-                    // ── Password Field ────────────────────
+                    // Password Field
                     _buildPasswordField(),
 
-                    // ── Error Message ─────────────────────
+                    // Error Message
                     if (_errorMessage != null) ...[
                       const SizedBox(height: 8),
                       _buildErrorMessage(),
@@ -282,27 +270,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
                     const SizedBox(height: 8),
 
-                    // ── Forgot Password ───────────────────
+                    // Forgot Password
                     _buildForgotPassword(),
 
                     const SizedBox(height: 24),
 
-                    // ── Login Button ──────────────────────
+                    // Login Button
                     _buildLoginButton(),
 
                     const SizedBox(height: 24),
 
-                    // ── Google Sign-In Button ─────────────────
+                    // Google Sign-In Button
                     _buildGoogleButton(),
 
                     const SizedBox(height: 24),
 
-                    // ── Divider ───────────────────────────────
+                    // Divider
                     _buildDivider(),
 
                     const SizedBox(height: 24),
 
-                    // ── Register Link ─────────────────────
+                    // Register Link
                     _buildRegisterLink(),
 
                     const SizedBox(height: 32),
@@ -316,7 +304,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  // ── Widgets ──────────────────────────────────────────────
+  // Widgets
 
   Widget _buildHeader() {
     return Column(
@@ -445,12 +433,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             controller: _passwordController,
             focusNode: _passwordFocus,
             obscureText: _obscurePassword,
+            textAlignVertical: TextAlignVertical.center,
             style: const TextStyle(
               color: AppColors.textPrimary,
               fontSize: 14,
             ),
             decoration: InputDecoration(
-              hintText: '••••••••',
+              hintText: '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022',
               hintStyle: TextStyle(
                 color: AppColors.textSecondary.withValues(alpha: 0.6),
                 fontSize: 18,
@@ -461,16 +450,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 color: AppColors.textSecondary,
                 size: 20,
               ),
-              suffixIcon: GestureDetector(
-                onTap: () =>
-                    setState(() => _obscurePassword = !_obscurePassword),
-                child: Icon(
-                  _obscurePassword
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                  color: AppColors.textSecondary,
-                  size: 20,
+              suffixIcon: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: IconButton(
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minHeight: 24,
+                    minWidth: 24,
+                  ),
+                  splashRadius: 18,
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  ),
                 ),
+              ),
+              suffixIconConstraints: const BoxConstraints(
+                minHeight: 40,
+                minWidth: 40,
               ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(
@@ -604,7 +606,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  // ── Google Sign-In Button ─────────────────────────────────
+  // Google Sign-In Button
   Widget _buildGoogleButton() {
     return GestureDetector(
       onTap: _isLoading ? null : _handleGoogleSignIn,
@@ -677,7 +679,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  // ── Divider ───────────────────────────────────────────────
+  // Divider
   Widget _buildDivider() {
     return Row(
       children: [

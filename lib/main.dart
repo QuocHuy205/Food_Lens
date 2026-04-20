@@ -5,6 +5,9 @@ import 'firebase_options.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_mode_provider.dart';
+import 'core/theme/locale_provider.dart';
+import 'package:food_lens/l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,15 +51,19 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final goRouter = ref.watch(appRouterProvider);
+    final themeMode = ref.watch(themeModeProvider);
+    final locale = ref.watch(localeProvider);
 
     return MaterialApp.router(
-      title: 'Food Lens',
+      onGenerateTitle: (context) => AppLocalizations.of(context)!.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light,
+      themeMode: themeMode,
+      locale: locale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: goRouter,
-      // Đảm bảo màu nền nhất quán
       builder: (context, child) {
         return GestureDetector(
           behavior: HitTestBehavior.translucent,
@@ -68,7 +75,7 @@ class MyApp extends ConsumerWidget {
             }
           },
           child: Container(
-            color: const Color(0xFFF5F5F5),
+            color: Theme.of(context).scaffoldBackgroundColor,
             child: child ?? const SizedBox.shrink(),
           ),
         );
