@@ -23,7 +23,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   late AnimationController _progressController;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
-  late Animation<double> _progressWidth;
 
   @override
   void initState() {
@@ -59,10 +58,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // Progress bar animation
     _progressController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-    _progressWidth = Tween<double>(begin: 0.0, end: 0.925).animate(
-      CurvedAnimation(parent: _progressController, curve: Curves.easeOut),
+      duration: const Duration(milliseconds: 1100),
     );
 
     // Start progress after page enters
@@ -241,13 +237,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2E7D32).withValues(alpha: 0.10),
+                        color: isDark
+                            ? AppColors.primary.withValues(alpha: 0.20)
+                            : const Color(0xFF2E7D32).withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
                         '$salutation, $displayName',
-                        style: const TextStyle(
-                          color: Color(0xFF1F5F25),
+                        style: TextStyle(
+                          color:
+                              isDark ? Colors.white : const Color(0xFF1F5F25),
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -282,18 +281,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: isDark
-                  ? Colors.white.withValues(alpha: 0.06)
+                  ? AppColors.primary.withValues(alpha: 0.12)
                   : Colors.white.withValues(alpha: 0.72),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: isDark ? _border(context) : const Color(0xFFD4E8D7),
+                color: isDark
+                    ? AppColors.primary.withValues(alpha: 0.30)
+                    : const Color(0xFFD4E8D7),
               ),
             ),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.auto_awesome,
-                  color: Color(0xFF2E7D32),
+                  color: isDark ? Colors.white : const Color(0xFF2E7D32),
                   size: 18,
                 ),
                 const SizedBox(width: 8),
@@ -301,16 +302,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   child: Text(
                     focusLabel,
                     style: TextStyle(
-                      color: isDark ? textPrimary : const Color(0xFF245D2A),
+                      color: isDark ? Colors.white : const Color(0xFF245D2A),
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
                 Text(
-                  'On track',
+                  l10n.onTrack,
                   style: TextStyle(
-                    color: const Color(0xFF2E7D32).withValues(alpha: 0.86),
+                    color: isDark ? Colors.white : const Color(0xFF2E7D32),
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                   ),
@@ -345,6 +346,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   Widget _buildCalorieSummaryCard() {
     final l10n = AppLocalizations.of(context)!;
+    const consumedCalories = 1450;
+    const goalCalories = 2200;
+    const progress = consumedCalories / goalCalories;
+    final remainingCalories = goalCalories - consumedCalories;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -357,57 +363,212 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
           ),
         ],
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.18),
+          width: 1,
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          // Header
-          Text(
-            l10n.dailyCalories,
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.5,
+          Positioned(
+            top: -40,
+            right: -40,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
             ),
           ),
-          const SizedBox(height: 12),
-          // Big Number
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '1,450',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 42,
-                  fontWeight: FontWeight.bold,
-                ),
+          Positioned(
+            bottom: -44,
+            left: -30,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                shape: BoxShape.circle,
               ),
-              Text(
-                '/ 2,200',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 18,
-                ),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 16),
-          // Progress Bar
-          _buildProgressBar(),
-          const SizedBox(height: 16),
-          // Macros
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildMacroItem(l10n.protein, '65g', Colors.white),
-              _buildMacroItem(l10n.carbs, '180g', Colors.white),
-              _buildMacroItem(l10n.fat, '45g', Colors.white),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    l10n.dailyCalories,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.20),
+                      ),
+                    ),
+                    child: Text(
+                      l10n.aiInsight,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Center(
+                child: AnimatedBuilder(
+                  animation: _progressController,
+                  builder: (context, child) {
+                    final animatedProgress =
+                        progress * _progressController.value;
+                    final animatedCalories =
+                        (consumedCalories * _progressController.value).round();
+
+                    return Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 164,
+                          height: 164,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.14),
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 148,
+                          height: 148,
+                          child: CircularProgressIndicator(
+                            value: animatedProgress,
+                            strokeWidth: 12,
+                            backgroundColor:
+                                Colors.white.withValues(alpha: 0.20),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                                Colors.white),
+                          ),
+                        ),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '$animatedCalories',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 36,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.4,
+                              ),
+                            ),
+                            Text(
+                              '/ $goalCalories ${l10n.kcal}',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.84),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildCalorieStatChip(
+                      label: l10n.consumed,
+                      value: '$consumedCalories ${l10n.kcal}',
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildCalorieStatChip(
+                      label: l10n.remaining,
+                      value: '$remainingCalories ${l10n.kcal}',
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildCalorieStatChip(
+                      label: l10n.goal,
+                      value: '$goalCalories ${l10n.kcal}',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              AnimatedBuilder(
+                animation: _progressController,
+                builder: (context, child) {
+                  final percentage =
+                      (progress * _progressController.value * 100)
+                          .clamp(0, 100)
+                          .round();
+
+                  return Text(
+                    l10n.dailyGoalProgress(percentage, remainingCalories),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.88),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.greatPaceTip,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.74),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.14),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildMacroItem(l10n.protein, '65g', Colors.white),
+                    _buildMacroItem(l10n.carbs, '180g', Colors.white),
+                    _buildMacroItem(l10n.fat, '45g', Colors.white),
+                  ],
+                ),
+              ),
             ],
           ),
         ],
@@ -415,46 +576,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  Widget _buildProgressBar() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Stack(
-          children: [
-            // Background bar
-            Container(
-              height: 8,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            // Animated bar
-            AnimatedBuilder(
-              animation: _progressController,
-              builder: (context, child) {
-                return Container(
-                  height: 8,
-                  width:
-                      MediaQuery.of(context).size.width * _progressWidth.value,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                );
-              },
-            ),
-          ],
+  Widget _buildCalorieStatChip({
+    required String label,
+    required String value,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.11),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.16),
         ),
-        const SizedBox(height: 6),
-        const Text(
-          '65% of daily goal',
-          style: TextStyle(
-            color: Colors.white70,
-            fontSize: 11,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-        ),
-      ],
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.78),
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 
@@ -552,13 +712,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: _surface(context),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: _border(context), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          // Food Icon
-          Icon(icon, size: 28, color: AppColors.primary),
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.primary.withValues(alpha: 0.22),
+                  AppColors.primary.withValues(alpha: 0.10),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, size: 26, color: AppColors.primary),
+          ),
           const SizedBox(width: 12),
           // Info
           Expanded(
@@ -569,16 +750,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   title,
                   style: TextStyle(
                     color: textPrimary,
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   time,
                   style: TextStyle(
                     color: textSecondary,
-                    fontSize: 11,
+                    fontSize: 12,
                   ),
                 ),
               ],

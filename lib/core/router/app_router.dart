@@ -12,6 +12,7 @@ import 'package:food_lens/features/auth/presentation/screens/register_screen.dar
 import 'package:food_lens/features/auth/presentation/screens/forgot_password_screen.dart';
 import 'package:food_lens/features/home/presentation/screens/home_screen.dart';
 import 'package:food_lens/features/scan/presentation/screens/scan_screen.dart';
+import 'package:food_lens/features/scan/presentation/screens/scan_result_screen.dart';
 import 'package:food_lens/features/nutrition/presentation/screens/stats_screen.dart';
 import 'package:food_lens/features/profile/presentation/screens/profile_screen.dart';
 import 'package:food_lens/features/profile/presentation/screens/edit_profile_screen.dart';
@@ -28,6 +29,7 @@ class AppRoutes {
   static const String forgotPassword = '/forgot-password';
   static const String home = '/home';
   static const String scan = '/scan';
+  static const String scanResult = '/scan/result';
   static const String stats = '/stats';
   static const String profile = '/profile';
   static const String editProfile = '/edit-profile';
@@ -162,6 +164,14 @@ final appRouterProvider = Provider((ref) {
           context: context,
           state: state,
           child: const ScanScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.scanResult,
+        pageBuilder: (context, state) => _buildSmoothPage(
+          context: context,
+          state: state,
+          child: ScanResultScreen(imageUrl: state.extra as String?),
         ),
       ),
       GoRoute(

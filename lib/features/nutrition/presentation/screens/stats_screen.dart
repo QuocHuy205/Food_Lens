@@ -149,19 +149,18 @@ class _StatsScreenState extends State<StatsScreen>
   Widget _buildSummaryCards() {
     final l10n = AppLocalizations.of(context)!;
     final surface = Theme.of(context).colorScheme.surface;
-    final textSecondary =
-        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72);
-    final borderColor =
-        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16);
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final textSecondary = onSurface.withValues(alpha: 0.72);
+    final borderColor = onSurface.withValues(alpha: 0.16);
 
     return Row(
       children: [
         Expanded(
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: surface,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: borderColor),
             ),
             child: Column(
@@ -172,29 +171,47 @@ class _StatsScreenState extends State<StatsScreen>
                   style: TextStyle(
                     color: textSecondary,
                     fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.4,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Text(
                   '2,180 ${l10n.kcal}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.primary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.4,
                   ),
                 ),
               ],
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 14),
         Expanded(
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: surface,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: borderColor),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.green.withValues(alpha: 0.08),
+                  Colors.green.withValues(alpha: 0.03),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.green.withValues(alpha: 0.12),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,15 +221,18 @@ class _StatsScreenState extends State<StatsScreen>
                   style: TextStyle(
                     color: textSecondary,
                     fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.4,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Text(
                   '+520 ${l10n.kcal}',
                   style: const TextStyle(
                     color: Colors.green,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.4,
                   ),
                 ),
               ],
@@ -245,7 +265,7 @@ class _StatsScreenState extends State<StatsScreen>
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: surface,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: borderColor),
           ),
           child: Column(
@@ -352,6 +372,15 @@ class _StatsScreenState extends State<StatsScreen>
     final onSurface = Theme.of(context).colorScheme.onSurface;
     final surface = Theme.of(context).colorScheme.surface;
     final borderColor = onSurface.withValues(alpha: 0.16);
+    final textSecondary = onSurface.withValues(alpha: 0.72);
+
+    const proteinGrams = 145;
+    const carbsGrams = 298;
+    const fatGrams = 66;
+    const proteinPct = 35;
+    const carbsPct = 45;
+    const fatPct = 20;
+    const totalGrams = proteinGrams + carbsGrams + fatGrams;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -369,36 +398,91 @@ class _StatsScreenState extends State<StatsScreen>
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: surface,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: borderColor),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Expanded(
-                    flex: 1,
-                    child:
-                        _buildPieSegment(Colors.blue, '${l10n.protein}\n35%'),
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.pie_chart,
+                      color: AppColors.primary,
+                      size: 18,
+                    ),
                   ),
+                  const SizedBox(width: 10),
                   Expanded(
-                    flex: 1,
-                    child:
-                        _buildPieSegment(Colors.orange, '${l10n.carbs}\n45%'),
+                    child: Text(
+                      '$totalGrams g',
+                      style: TextStyle(
+                        color: onSurface,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
                   ),
-                  Expanded(
-                    flex: 1,
-                    child: _buildPieSegment(Colors.red, '${l10n.fat}\n20%'),
+                  Text(
+                    selectedPeriod == '7d' ? l10n.last7Days : l10n.averageDaily,
+                    style: TextStyle(
+                      color: textSecondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
+              const SizedBox(height: 14),
+              _buildMacroRatioBar(
+                proteinPercent: proteinPct,
+                carbsPercent: carbsPct,
+                fatPercent: fatPct,
+              ),
               const SizedBox(height: 16),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildMacroInfo(l10n.protein, '145g', Colors.blue),
-                  _buildMacroInfo(l10n.carbs, '298g', Colors.orange),
-                  _buildMacroInfo(l10n.fat, '66g', Colors.red),
+                  Expanded(
+                    child: _buildMacroMetricCard(
+                      name: l10n.protein,
+                      grams: '${proteinGrams}g',
+                      percent: '$proteinPct%',
+                      color: const Color(0xFF1E88E5),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _buildMacroMetricCard(
+                      name: l10n.carbs,
+                      grams: '${carbsGrams}g',
+                      percent: '$carbsPct%',
+                      color: const Color(0xFFFB8C00),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _buildMacroMetricCard(
+                      name: l10n.fat,
+                      grams: '${fatGrams}g',
+                      percent: '$fatPct%',
+                      color: const Color(0xFFE53935),
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -408,23 +492,103 @@ class _StatsScreenState extends State<StatsScreen>
     );
   }
 
-  Widget _buildPieSegment(Color color, String label) {
+  Widget _buildMacroRatioBar({
+    required int proteinPercent,
+    required int carbsPercent,
+    required int fatPercent,
+  }) {
     return Container(
-      height: 100,
+      height: 14,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(999),
       ),
-      child: Center(
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: color,
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-          ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(999),
+        child: Row(
+          children: [
+            Expanded(
+              flex: proteinPercent,
+              child: Container(color: const Color(0xFF1E88E5)),
+            ),
+            Expanded(
+              flex: carbsPercent,
+              child: Container(color: const Color(0xFFFB8C00)),
+            ),
+            Expanded(
+              flex: fatPercent,
+              child: Container(color: const Color(0xFFE53935)),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMacroMetricCard({
+    required String name,
+    required String grams,
+    required String percent,
+    required Color color,
+  }) {
+    final textSecondary =
+        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  name,
+                  style: TextStyle(
+                    color: textSecondary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            grams,
+            style: TextStyle(
+              color: color,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            percent,
+            style: TextStyle(
+              color: textSecondary,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

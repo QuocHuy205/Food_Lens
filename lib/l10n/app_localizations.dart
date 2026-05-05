@@ -440,6 +440,36 @@ abstract class AppLocalizations {
   /// **'Today\'s Calories'**
   String get todayCalories;
 
+  /// No description provided for @aiInsight.
+  ///
+  /// In en, this message translates to:
+  /// **'AI insight'**
+  String get aiInsight;
+
+  /// No description provided for @greatPaceTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Great pace today. Keep dinner light and protein-focused.'**
+  String get greatPaceTip;
+
+  /// No description provided for @consumed.
+  ///
+  /// In en, this message translates to:
+  /// **'Consumed'**
+  String get consumed;
+
+  /// No description provided for @remaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining'**
+  String get remaining;
+
+  /// No description provided for @dailyGoalProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% of daily goal • {remaining} kcal left'**
+  String dailyGoalProgress(Object percent, Object remaining);
+
   /// No description provided for @kcal.
   ///
   /// In en, this message translates to:
@@ -541,6 +571,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose from Gallery'**
   String get chooseFromGallery;
+
+  /// No description provided for @imageSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Image selected'**
+  String get imageSelected;
 
   /// No description provided for @cameraFeatureComingSoon.
   ///

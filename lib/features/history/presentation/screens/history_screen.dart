@@ -153,13 +153,28 @@ class _HistoryScreenState extends State<HistoryScreen>
                       decoration: InputDecoration(
                         hintText: l10n.searchHistoryPlaceholder,
                         prefixIcon: Icon(Icons.search, color: textSecondary),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: borderColor),
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide:
+                              BorderSide(color: borderColor, width: 1.2),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: borderColor, width: 1),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide:
+                              BorderSide(color: AppColors.primary, width: 1.5),
                         ),
                         filled: true,
                         fillColor: Theme.of(context).colorScheme.surface,
+                        hintStyle: TextStyle(color: textSecondary),
                       ),
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface),
                     ),
                   ),
                 ),
@@ -332,7 +347,6 @@ class _AnimatedFilterChipState extends State<_AnimatedFilterChip>
 
   @override
   Widget build(BuildContext context) {
-    final surface = Theme.of(context).colorScheme.surface;
     final onSurface = Theme.of(context).colorScheme.onSurface;
     final borderColor =
         Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16);
@@ -349,29 +363,33 @@ class _AnimatedFilterChipState extends State<_AnimatedFilterChip>
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: widget.isSelected ? AppColors.primary : surface,
-            borderRadius: BorderRadius.circular(20),
+            color: widget.isSelected
+                ? AppColors.primary
+                : onSurface.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: widget.isSelected ? AppColors.primary : borderColor,
+              width: 1.2,
             ),
             boxShadow: widget.isSelected
                 ? [
                     BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      color: AppColors.primary.withValues(alpha: 0.25),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
                   ]
-                : null,
+                : [],
           ),
           child: Text(
             widget.label,
             style: TextStyle(
               color: widget.isSelected ? Colors.white : onSurface,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
             ),
           ),
         ),
@@ -405,27 +423,27 @@ class _HistoryListItem extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: borderColor),
       ),
       child: Row(
         children: [
-          // Emoji icon
+          // Emoji icon - Premium styled
           Container(
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
             ),
             child:
-                Center(child: Icon(icon, size: 30, color: AppColors.primary)),
+                Center(child: Icon(icon, size: 28, color: AppColors.primary)),
           ),
-          const SizedBox(width: 12),
-          // Info
+          const SizedBox(width: 16),
+          // Info - Enhanced typography
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -434,16 +452,18 @@ class _HistoryListItem extends StatelessWidget {
                   name,
                   style: TextStyle(
                     color: onSurface,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   time,
                   style: TextStyle(
                     color: textSecondary,
                     fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],

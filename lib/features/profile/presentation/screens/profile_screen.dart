@@ -1,4 +1,4 @@
-﻿import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -27,7 +27,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   void initState() {
     super.initState();
     _setupAnimations();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _pageEnterController.forward();
       final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -43,14 +42,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       duration: const Duration(milliseconds: 300),
     );
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0.0, 0.1),
+      begin: const Offset(0, 0.1),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _pageEnterController,
       curve: Curves.easeOut,
     ));
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _pageEnterController, curve: Curves.easeOut),
+    _fadeAnimation = CurvedAnimation(
+      parent: _pageEnterController,
+      curve: Curves.easeOut,
     );
   }
 
@@ -71,7 +71,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         opacity: _fadeAnimation,
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          appBar: _buildAppBar(l10n),
+          appBar: AppBar(
+            backgroundColor: AppColors.primary,
+            elevation: 0,
+            title: Text(
+              l10n.profileTitle,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
           body: state.profile.when(
             data: (profile) {
               if (profile == null) {
@@ -163,7 +174,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       delay: const Duration(milliseconds: 400),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: _buildLogoutButton(),
+                        child: _buildLogoutButton(l10n),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -183,30 +194,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               ),
             ),
           ),
-          bottomNavigationBar: _buildBottomNav(context),
+          bottomNavigationBar: AppBottomNav(
+            currentIndex: 4,
+            surfaceColor: _surface(context),
+            borderColor: _border(context),
+            unselectedItemColor: _mutedText(context),
+          ),
         ),
       ),
     );
   }
 
   Color _surface(BuildContext context) => Theme.of(context).colorScheme.surface;
-
   Color _onSurface(BuildContext context) =>
       Theme.of(context).colorScheme.onSurface;
-
   Color _mutedText(BuildContext context) =>
       Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72);
-
   Color _border(BuildContext context) =>
       Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16);
 
   Widget _buildProfileHeader(UserProfile profile) {
-    final textPrimary = _onSurface(context);
-    final textSecondary = _mutedText(context);
     final initials = profile.name.trim().isNotEmpty
         ? profile.name.trim().substring(0, 1).toUpperCase()
         : 'U';
-
     final hasAvatar = profile.photoUrl != null && profile.photoUrl!.isNotEmpty;
 
     return Container(
@@ -252,80 +262,44 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             ),
           ),
           const SizedBox(height: 12),
-          Text(
-            profile.name,
-            style: TextStyle(
-              color: textPrimary,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          Text(profile.name,
+              style: TextStyle(
+                  color: _onSurface(context),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600)),
           const SizedBox(height: 4),
-          Text(
-            profile.email,
-            style: TextStyle(
-              color: textSecondary,
-              fontSize: 12,
-            ),
-          ),
+          Text(profile.email,
+              style: TextStyle(color: _mutedText(context), fontSize: 12)),
         ],
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(AppLocalizations l10n) {
-    return AppBar(
-      backgroundColor: AppColors.primary,
-      elevation: 0,
-      title: Text(
-        l10n.profileTitle,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
   Widget _buildStatCard(String title, String value, String subtitle) {
-    final textSecondary = _mutedText(context);
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: _surface(context),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: _border(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: textSecondary,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(
-              color: AppColors.primary,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          Text(title,
+              style: TextStyle(
+                  color: _mutedText(context),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600)),
+          const SizedBox(height: 10),
+          Text(value,
+              style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800)),
           const SizedBox(height: 2),
-          Text(
-            subtitle,
-            style: TextStyle(
-              color: textSecondary,
-              fontSize: 10,
-            ),
-          ),
+          Text(subtitle,
+              style: TextStyle(color: _mutedText(context), fontSize: 10)),
         ],
       ),
     );
@@ -337,9 +311,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     String subtitle, {
     required VoidCallback onTap,
   }) {
-    final textPrimary = _onSurface(context);
-    final textSecondary = _mutedText(context);
-
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -359,48 +330,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           ),
           child: Icon(icon, color: AppColors.primary, size: 20),
         ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: textPrimary,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(
-            color: textSecondary,
-            fontSize: 11,
-          ),
-        ),
-        trailing: Icon(
-          Icons.arrow_forward_ios,
-          color: textSecondary,
-          size: 14,
-        ),
+        title: Text(title,
+            style: TextStyle(
+                color: _onSurface(context),
+                fontSize: 13,
+                fontWeight: FontWeight.w600)),
+        subtitle: Text(subtitle,
+            style: TextStyle(color: _mutedText(context), fontSize: 11)),
+        trailing:
+            Icon(Icons.arrow_forward_ios, color: _mutedText(context), size: 14),
       ),
     );
   }
 
-  Widget _buildBottomNav(BuildContext context) {
-    return AppBottomNav(
-      currentIndex: 4,
-      surfaceColor: _surface(context),
-      borderColor: _border(context),
-      unselectedItemColor: _mutedText(context),
-    );
-  }
-
-  Widget _buildLogoutButton() {
-    final l10n = AppLocalizations.of(context)!;
-
+  Widget _buildLogoutButton(AppLocalizations l10n) {
     return GestureDetector(
       onTap: () async {
         await FirebaseAuth.instance.signOut();
-        if (mounted) {
-          context.go('/login');
-        }
+        if (mounted) context.go('/login');
       },
       child: Container(
         width: double.infinity,

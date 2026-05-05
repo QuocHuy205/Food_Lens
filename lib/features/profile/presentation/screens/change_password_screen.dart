@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
-import '../../../../core/theme/app_colors.dart';
+import 'package:food_lens/core/theme/app_colors.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -62,22 +61,18 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         case 'invalid-credential':
           message = 'Mật khẩu hiện tại không đúng.';
           break;
-        case 'weak-password':
-          message = 'Mật khẩu mới quá yếu.';
-          break;
-        case 'requires-recent-login':
-          message = 'Vui lòng đăng nhập lại để đổi mật khẩu.';
+        case 'too-many-requests':
+          message = 'Bạn thử quá nhiều lần. Vui lòng thử lại sau.';
           break;
         default:
-          message = e.message ?? 'Đổi mật khẩu thất bại.';
+          message = e.message ?? 'Không thể đổi mật khẩu.';
       }
 
       _showMessage(message, isError: true);
-    } catch (_) {
-      if (!mounted) return;
-      _showMessage('Có lỗi xảy ra. Vui lòng thử lại.', isError: true);
     } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
   }
 
@@ -85,7 +80,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        behavior: SnackBarBehavior.floating,
         backgroundColor: isError ? AppColors.error : AppColors.success,
       ),
     );
@@ -157,32 +151,39 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _isSubmitting ? null : _handleChangePassword,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 24),
+                Container(
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _isSubmitting ? null : _handleChangePassword,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Center(
+                        child: _isSubmitting
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
+                                ),
+                              )
+                            : Text(
+                                'Cập nhật mật khẩu',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                       ),
                     ),
-                    child: _isSubmitting
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : const Text(
-                            'Cập nhật mật khẩu',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
                   ),
                 ),
               ],
@@ -240,15 +241,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               vertical: 14,
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(color: AppColors.border),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(color: AppColors.border),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               borderSide:
                   const BorderSide(color: AppColors.primary, width: 1.6),
             ),

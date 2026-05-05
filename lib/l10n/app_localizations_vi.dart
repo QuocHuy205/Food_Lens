@@ -185,6 +185,24 @@ class AppLocalizationsVi extends AppLocalizations {
   String get todayCalories => 'Calo hôm nay';
 
   @override
+  String get aiInsight => 'Gợi ý AI';
+
+  @override
+  String get greatPaceTip =>
+      'Nhịp hôm nay rất tốt. Giữ bữa tối nhẹ và ưu tiên đạm.';
+
+  @override
+  String get consumed => 'Đã nạp';
+
+  @override
+  String get remaining => 'Còn lại';
+
+  @override
+  String dailyGoalProgress(Object percent, Object remaining) {
+    return '$percent% mục tiêu ngày • còn $remaining kcal';
+  }
+
+  @override
   String get kcal => 'kcal';
 
   @override
@@ -235,6 +253,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get chooseFromGallery => 'Chọn từ thư viện';
+
+  @override
+  String get imageSelected => 'Ảnh đã chọn';
 
   @override
   String get cameraFeatureComingSoon => 'Tính năng camera sắp ra mắt';

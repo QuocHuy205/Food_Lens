@@ -67,6 +67,17 @@
     }
   },
   "todayCalories": "Today's Calories",
+  "aiInsight": "AI insight",
+  "greatPaceTip": "Great pace today. Keep dinner light and protein-focused.",
+  "consumed": "Consumed",
+  "remaining": "Remaining",
+  "dailyGoalProgress": "{percent}% of daily goal • {remaining} kcal left",
+  "@dailyGoalProgress": {
+    "placeholders": {
+      "percent": {},
+      "remaining": {}
+    }
+  },
   "kcal": "kcal",
   "unknown": "Unknown",
   "protein": "Protein",
@@ -84,6 +95,7 @@
   "scanSubtitle": "Take a photo or upload an image to analyze nutritional information",
   "takePhoto": "Take Photo",
   "chooseFromGallery": "Choose from Gallery",
+  "imageSelected": "Image selected",
   "cameraFeatureComingSoon": "Camera feature coming soon",
   "galleryFeatureComingSoon": "Gallery feature coming soon",
   "comingSoon": "Coming Soon",

@@ -1,4 +1,6 @@
-﻿import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:io';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,7 +9,6 @@ import 'package:food_lens/l10n/app_localizations.dart';
 import 'package:food_lens/core/theme/app_colors.dart';
 import 'package:food_lens/core/widgets/animated_widgets.dart';
 import 'package:food_lens/core/services/cloudinary_service.dart';
-import 'dart:io';
 
 import '../../domain/entities/user_profile.dart';
 import '../providers/profile_provider.dart';
@@ -71,8 +72,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
       parent: _pageEnterController,
       curve: Curves.easeOut,
     ));
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _pageEnterController, curve: Curves.easeOut),
+    _fadeAnimation = CurvedAnimation(
+      parent: _pageEnterController,
+      curve: Curves.easeOut,
     );
   }
 
@@ -103,7 +105,23 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
         opacity: _fadeAnimation,
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          appBar: _buildAppBar(context),
+          appBar: AppBar(
+            backgroundColor: AppColors.primary,
+            elevation: 0,
+            title: Text(
+              l10n.editProfileTitle,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            leading: IconButton(
+              onPressed: () => context.go('/profile'),
+              icon: const Icon(Icons.arrow_back_ios,
+                  color: Colors.white, size: 20),
+            ),
+          ),
           body: currentProfile == null && state.profile.isLoading
               ? const Center(child: CircularProgressIndicator())
               : SingleChildScrollView(
@@ -117,23 +135,26 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                       ),
                       const SizedBox(height: 20),
                       FadeInWidget(
-                        delay: const Duration(milliseconds: 100),
+                        delay: const Duration(milliseconds: 120),
                         child: _buildSectionTitle(l10n.personalInformation),
                       ),
                       const SizedBox(height: 12),
                       FadeInWidget(
-                        delay: const Duration(milliseconds: 150),
+                        delay: const Duration(milliseconds: 160),
                         child: _buildTextField(l10n.fullName, nameController),
                       ),
                       const SizedBox(height: 12),
                       FadeInWidget(
                         delay: const Duration(milliseconds: 200),
-                        child: _buildTextField(l10n.age, ageController,
-                            isNumeric: true, onChanged: (_) => setState(() {})),
+                        child: _buildTextField(
+                          l10n.age,
+                          ageController,
+                          isNumeric: true,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       FadeInWidget(
-                        delay: const Duration(milliseconds: 250),
+                        delay: const Duration(milliseconds: 240),
                         child: _buildDropdownField(
                           l10n.gender,
                           selectedGender,
@@ -146,12 +167,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                       ),
                       const SizedBox(height: 24),
                       FadeInWidget(
-                        delay: const Duration(milliseconds: 300),
+                        delay: const Duration(milliseconds: 280),
                         child: _buildSectionTitle(l10n.physicalMeasurements),
                       ),
                       const SizedBox(height: 12),
                       FadeInWidget(
-                        delay: const Duration(milliseconds: 350),
+                        delay: const Duration(milliseconds: 320),
                         child: Row(
                           children: [
                             Expanded(
@@ -159,7 +180,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                                 l10n.heightCm,
                                 heightController,
                                 isNumeric: true,
-                                onChanged: (_) => setState(() {}),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -168,7 +188,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                                 l10n.weightKg,
                                 weightController,
                                 isNumeric: true,
-                                onChanged: (_) => setState(() {}),
                               ),
                             ),
                           ],
@@ -176,7 +195,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                       ),
                       const SizedBox(height: 24),
                       FadeInWidget(
-                        delay: const Duration(milliseconds: 400),
+                        delay: const Duration(milliseconds: 360),
                         child: Row(
                           children: [
                             Expanded(
@@ -191,7 +210,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                             Expanded(
                               child: _buildInfoCard(
                                 l10n.tdee,
-                                '${tdee.toStringAsFixed(0)} kcal',
+                                '${tdee.toStringAsFixed(0)} ${l10n.kcal}',
                                 l10n.basedOnActivity(
                                   _activityLevelLocalizedLabel(
                                     l10n,
@@ -206,12 +225,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                       ),
                       const SizedBox(height: 24),
                       FadeInWidget(
-                        delay: const Duration(milliseconds: 500),
+                        delay: const Duration(milliseconds: 420),
                         child: _buildSectionTitle(l10n.activityGoal),
                       ),
                       const SizedBox(height: 12),
                       FadeInWidget(
-                        delay: const Duration(milliseconds: 550),
+                        delay: const Duration(milliseconds: 460),
                         child: _buildDropdownField(
                           l10n.activityLevel,
                           selectedActivityLevel,
@@ -228,7 +247,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                       ),
                       const SizedBox(height: 12),
                       FadeInWidget(
-                        delay: const Duration(milliseconds: 600),
+                        delay: const Duration(milliseconds: 500),
                         child: _buildDropdownField(
                           l10n.goal,
                           selectedGoal,
@@ -242,7 +261,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                       ),
                       const SizedBox(height: 24),
                       FadeInWidget(
-                        delay: const Duration(milliseconds: 650),
+                        delay: const Duration(milliseconds: 540),
                         child: Row(
                           children: [
                             Expanded(
@@ -251,15 +270,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                                 child: Container(
                                   height: 52,
                                   decoration: BoxDecoration(
-                                    color: AppColors.surface,
+                                    color: _surface(context),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: AppColors.border),
+                                    border: Border.all(color: _border(context)),
                                   ),
                                   child: Center(
                                     child: Text(
                                       l10n.discard,
-                                      style: const TextStyle(
-                                        color: AppColors.textPrimary,
+                                      style: TextStyle(
+                                        color: _onSurface(context),
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -275,21 +294,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                                 child: Container(
                                   height: 52,
                                   decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [
-                                        Color(0xFF2E7D32),
-                                        Color(0xFF388E3C)
-                                      ],
-                                    ),
+                                    color: AppColors.primary,
                                     borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppColors.primary
-                                            .withValues(alpha: 0.3),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 6),
-                                      ),
-                                    ],
                                   ),
                                   child: Center(
                                     child: state.isSaving
@@ -306,7 +312,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                                           )
                                         : Text(
                                             l10n.saveChanges,
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 16,
                                               fontWeight: FontWeight.w600,
@@ -338,32 +344,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return AppBar(
-      backgroundColor: AppColors.primary,
-      elevation: 0,
-      title: Text(
-        l10n.editProfileTitle,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      leading: IconButton(
-        onPressed: () => context.go('/profile'),
-        icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-      ),
-    );
-  }
+  Color _surface(BuildContext context) => Theme.of(context).colorScheme.surface;
+  Color _onSurface(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurface;
+  Color _mutedText(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72);
+  Color _border(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16);
 
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
-        color: AppColors.textPrimary,
+      style: TextStyle(
+        color: _onSurface(context),
         fontSize: 14,
         fontWeight: FontWeight.w600,
       ),
@@ -437,11 +430,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                                 AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : const Icon(
-                          Icons.camera_alt,
-                          size: 16,
-                          color: Colors.white,
-                        ),
+                      : const Icon(Icons.camera_alt,
+                          size: 16, color: Colors.white),
                 ),
               ),
             ],
@@ -449,10 +439,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
           const SizedBox(height: 8),
           Text(
             l10n.tapCameraChangeAvatar,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12,
-            ),
+            style: TextStyle(color: _mutedText(context), fontSize: 12),
           ),
         ],
       ),
@@ -463,33 +450,32 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
     String label,
     TextEditingController controller, {
     bool isNumeric = false,
-    ValueChanged<String>? onChanged,
   }) {
     return TextField(
       controller: controller,
       keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
-      onChanged: onChanged,
-      onTap: () {
-        if (!isNumeric) return;
-
-        final text = controller.text.trim();
-        if (text == '0' || text == '0.0' || text == '0.00') {
-          controller.clear();
-        }
-      },
+      style: TextStyle(color: _onSurface(context), fontWeight: FontWeight.w500),
       decoration: InputDecoration(
         labelText: label,
         hintText: 'Enter $label',
+        labelStyle: TextStyle(color: _mutedText(context), fontSize: 12),
+        hintStyle: TextStyle(color: _mutedText(context)),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: _border(context)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: _border(context)),
         ),
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: _surface(context),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );
   }
@@ -503,66 +489,52 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(12),
-        color: AppColors.surface,
+        border: Border.all(color: _border(context)),
+        borderRadius: BorderRadius.circular(14),
+        color: _surface(context),
       ),
       child: DropdownButton<String>(
         value: value,
-        items: items.map((item) {
-          return DropdownMenuItem(
-            value: item.key,
-            child: Text(item.value),
-          );
-        }).toList(),
+        items: items
+            .map((item) =>
+                DropdownMenuItem(value: item.key, child: Text(item.value)))
+            .toList(),
         onChanged: onChanged,
         isExpanded: true,
+        dropdownColor: _surface(context),
+        style: TextStyle(color: _onSurface(context)),
         underline: const SizedBox(),
-        hint: Text(label),
+        hint: Text(label, style: TextStyle(color: _mutedText(context))),
       ),
     );
   }
 
   Widget _buildInfoCard(
-    String title,
-    String value,
-    String subtitle,
-    Color accentColor,
-  ) {
+      String title, String value, String subtitle, Color accentColor) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        color: _surface(context),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _border(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              color: accentColor,
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 11,
-            ),
-          ),
+          Text(title,
+              style: TextStyle(
+                  color: _mutedText(context),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600)),
+          const SizedBox(height: 10),
+          Text(value,
+              style: TextStyle(
+                  color: accentColor,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800)),
+          const SizedBox(height: 6),
+          Text(subtitle,
+              style: TextStyle(color: _mutedText(context), fontSize: 12)),
         ],
       ),
     );
@@ -623,22 +595,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
   }
 
   Future<void> _pickAndUploadAvatar() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
+    final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
       imageQuality: 80,
       maxWidth: 1024,
       maxHeight: 1024,
     );
-
     if (picked == null) return;
 
     setState(() => _isUploadingAvatar = true);
-
     final uploadedUrl = await CloudinaryService.uploadImage(File(picked.path));
-
     if (!mounted) return;
-
     setState(() => _isUploadingAvatar = false);
 
     if (uploadedUrl == null) {
@@ -650,7 +617,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
       );
       return;
     }
-
     setState(() => _avatarUrl = uploadedUrl);
   }
 
@@ -683,18 +649,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
     await ref.read(profileViewModelProvider.notifier).updateProfile(updated);
 
     if (!mounted) return;
-
-    final latestState = ref.read(profileViewModelProvider);
-    if (latestState.errorMessage == null) {
+    if (ref.read(profileViewModelProvider).errorMessage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content:
               Text(AppLocalizations.of(context)!.profileUpdatedSuccessfully),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
       context.go('/profile');
@@ -754,10 +717,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
     };
   }
 
-  String _activityLevelLocalizedLabel(
-    AppLocalizations l10n,
-    String? code,
-  ) {
+  String _activityLevelLocalizedLabel(AppLocalizations l10n, String? code) {
     return switch (code) {
       'sedentary' => l10n.sedentary,
       'light' => l10n.light,

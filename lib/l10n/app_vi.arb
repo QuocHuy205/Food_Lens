@@ -67,6 +67,17 @@
     }
   },
   "todayCalories": "Calo hôm nay",
+  "aiInsight": "Gợi ý AI",
+  "greatPaceTip": "Nhịp hôm nay rất tốt. Giữ bữa tối nhẹ và ưu tiên đạm.",
+  "consumed": "Đã nạp",
+  "remaining": "Còn lại",
+  "dailyGoalProgress": "{percent}% mục tiêu ngày • còn {remaining} kcal",
+  "@dailyGoalProgress": {
+    "placeholders": {
+      "percent": {},
+      "remaining": {}
+    }
+  },
   "kcal": "kcal",
   "unknown": "Không rõ",
   "protein": "Đạm",
@@ -84,6 +95,7 @@
   "scanSubtitle": "Chụp ảnh hoặc tải ảnh lên để phân tích thông tin dinh dưỡng",
   "takePhoto": "Chụp ảnh",
   "chooseFromGallery": "Chọn từ thư viện",
+  "imageSelected": "Ảnh đã chọn",
   "cameraFeatureComingSoon": "Tính năng camera sắp ra mắt",
   "galleryFeatureComingSoon": "Tính năng thư viện sắp ra mắt",
   "comingSoon": "Sắp ra mắt",

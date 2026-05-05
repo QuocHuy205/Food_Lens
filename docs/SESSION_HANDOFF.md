@@ -4,6 +4,74 @@ Muc tieu: File gon, de AI session sau tiep quan nhanh. Giữ chi tiet session ga
 
 ---
 
+## Session Gan Nhat - Session 21 (May 4, 2026 - Scan Upload + Result Flow)
+
+### Da hoan thanh
+
+- Them luong chon/chup anh cho ScanScreen:
+  - Dung `image_picker` de mo camera hoac gallery.
+  - Luu anh local tam thoi de preview truoc khi phan tich.
+- Upload Cloudinary khi chon/chup thanh cong:
+  - Goi `CloudinaryService.uploadImage(File)` ngay sau khi co anh.
+  - Giữ `imageUrl` da upload de dung cho buoc analyze.
+- Don giao dien Scan:
+  - Xoa text thong bao inline ve dang up anh.
+  - Xoa snackbar den nho sau khi upload/phan tich xong.
+  - Giu flow im lang, chi chuyen man khi can thiet.
+- Dieu huong sau khi nhan `Phan tich anh`:
+  - Push sang route `/scan/result`.
+  - Them route result trong router neu co san.
+  - `ScanResultScreen` nhan `imageUrl` va hien thi anh that tu Cloudinary neu co.
+- Validation:
+  - `flutter analyze` = No issues found!
+  - `flutter build apk --debug` = SUCCESS.
+  - `flutter run` da chay thanh cong trong session gan day.
+
+### Trang thai hien tai
+
+- Scan flow da co upload Cloudinary va chuyen sang result screen.
+- UI Scan gon hon, khong con thong bao phu khong can thiet.
+- App van clean o analyzer va build debug.
+
+### Luu y cho session sau
+
+- Buoc tiep theo nen wire `ScanViewModel` + API `/analyze` that, thay vi mock delay.
+- Neu muon gui result qua router, hien tai da co `imageUrl` qua `state.extra`.
+
+---
+
+## Session Gan Nhat - Session 20 (May 4, 2026 - UI Sync + Recovery)
+
+### Da hoan thanh
+
+- Dong bo lai giao dien theo chu de cu, uu tien layout sach va on dinh hon:
+  - Giam bot gradient/shadow qua da tren History, Stats, Profile, Edit Profile, Scan Result.
+  - Giu border-based card style, mau AppColors.primary, va dark mode co ban.
+  - Giup giao dien dong nhat hon voi phien ban truoc khi redesign qua manh.
+- Sua loi compile do widget tree bi hong o 3 man Profile:
+  - Rebuild `profile_screen.dart`, `edit_profile_screen.dart`, `change_password_screen.dart`.
+  - Kiem tra lai bang `get_errors`: khong con loi syntax.
+- Sua loi l10n o Change Password:
+  - Do bo cac getter khong ton tai trong `AppLocalizations`.
+  - Doi sang chuoi on dinh de app compile lai an toan.
+- Cap nhat localization generated files:
+  - `app_localizations.dart`, `app_localizations_en.dart`, `app_localizations_vi.dart` duoc refresh sau khi bo sung key.
+- Validation:
+  - `flutter run` da chay thanh cong sau khi sua loi l10n.
+
+### Trang thai hien tai
+
+- App dang o trang thai chay duoc.
+- UI da duoc dong bo lai theo huong giao dien cu, de don va on dinh hon.
+- Cac man profile lien quan da duoc khoi phuc va khong con loi compile.
+
+### Luu y cho session sau
+
+- Neu muon tiep tuc polish UI, uu tien giu tinh sach, it gradient, it shadow, va bao toan dark mode + l10n.
+- Neu can them session note, ghi ngan gon theo format compact hien tai.
+
+---
+
 ## Session Gan Nhat - Session 19 (Apr 20, 2026 - Final Polish)
 
 ### Da hoan thanh

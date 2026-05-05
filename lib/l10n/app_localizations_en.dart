@@ -184,6 +184,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayCalories => 'Today\'s Calories';
 
   @override
+  String get aiInsight => 'AI insight';
+
+  @override
+  String get greatPaceTip =>
+      'Great pace today. Keep dinner light and protein-focused.';
+
+  @override
+  String get consumed => 'Consumed';
+
+  @override
+  String get remaining => 'Remaining';
+
+  @override
+  String dailyGoalProgress(Object percent, Object remaining) {
+    return '$percent% of daily goal • $remaining kcal left';
+  }
+
+  @override
   String get kcal => 'kcal';
 
   @override
@@ -234,6 +252,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chooseFromGallery => 'Choose from Gallery';
+
+  @override
+  String get imageSelected => 'Image selected';
 
   @override
   String get cameraFeatureComingSoon => 'Camera feature coming soon';
