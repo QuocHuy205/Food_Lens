@@ -324,10 +324,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   String _resolveDisplayName(UserProfile? profile) {
-    final profileName = profile?.name.trim();
-    if (profileName != null && profileName.isNotEmpty) {
-      return profileName.split(' ').first;
-    }
+    // final profileName = profile?.name.trim();
+    // if (profileName != null && profileName.isNotEmpty) {
+    //   return profileName.split(' ').first;
+    // }
 
     final authUser = FirebaseAuth.instance.currentUser;
     final authName = authUser?.displayName?.trim();

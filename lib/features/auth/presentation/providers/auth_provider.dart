@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart'; // Có thể bỏ nếu không dùng Firestore nữa
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:food_lens/core/services/api_service.dart'; // Import ApiService mới
 
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/usecases/google_sign_in_usecase.dart';
@@ -10,26 +11,29 @@ import '../../domain/usecases/logout_usecase.dart';
 import '../../domain/usecases/forgot_password_usecase.dart';
 import '../viewmodels/auth_viewmodel.dart';
 
-// Firebase providers
+// 1. Firebase Auth provider
 final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
   return FirebaseAuth.instance;
 });
 
-final firebaseFirestoreProvider = Provider<FirebaseFirestore>((ref) {
-  return FirebaseFirestore.instance;
+// 2. ApiService provider (Dùng để giao tiếp với FastAPI)
+final apiServiceProvider = Provider<ApiService>((ref) {
+  return ApiService();
 });
 
-// Auth repository provider
+// 3. Auth repository provider - CẬP NHẬT TẠI ĐÂY
 final authRepositoryProvider = Provider<AuthRepositoryImpl>((ref) {
   final firebaseAuth = ref.watch(firebaseAuthProvider);
-  final firebaseFirestore = ref.watch(firebaseFirestoreProvider);
+  final apiService = ref.watch(apiServiceProvider); // Lấy apiService thay vì Firestore
+
   return AuthRepositoryImpl(
     firebaseAuth: firebaseAuth,
-    firebaseFirestore: firebaseFirestore,
+    apiService: apiService, // Truyền apiService vào Repository
   );
 });
 
-// UseCase providers
+// --- Các UseCase providers giữ nguyên vì chúng phụ thuộc vào authRepositoryProvider ---
+
 final loginUseCaseProvider = Provider<LoginUseCase>((ref) {
   final repository = ref.watch(authRepositoryProvider);
   return LoginUseCase(repository: repository);
@@ -55,9 +59,9 @@ final googleSignInUseCaseProvider = Provider<GoogleSignInUseCase>((ref) {
   return GoogleSignInUseCase(repository: repository);
 });
 
-// Auth ViewModel provider
+// 4. Auth ViewModel provider
 final authViewModelProvider =
-    StateNotifierProvider<AuthViewModel, AuthState>((ref) {
+StateNotifierProvider<AuthViewModel, AuthState>((ref) {
   final loginUseCase = ref.watch(loginUseCaseProvider);
   final registerUseCase = ref.watch(registerUseCaseProvider);
   final logoutUseCase = ref.watch(logoutUseCaseProvider);

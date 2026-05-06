@@ -14,7 +14,7 @@ class AppConfig {
 
   // AI API — Load từ .env hoặc default
   static String get aiApiBaseUrl =>
-      dotenv.env['AI_SERVER_URL'] ?? 'http://10.0.2.2:8000'; // Android emulator
+      dotenv.env['AI_SERVER_URL'] ?? 'http://192.168.1.238:8000'; // Android emulator
 
   static const String analyzeEndpoint = '/analyze';
 

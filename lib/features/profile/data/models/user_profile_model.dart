@@ -24,7 +24,7 @@ class UserProfileModel extends UserProfile {
     return UserProfileModel(
       userId: (json['userId'] ?? '') as String,
       email: (json['email'] ?? '') as String,
-      name: (json['name'] ?? '') as String,
+      name: (json['full_name'] ?? json['name'] ?? '') as String,
       photoUrl: json['photoUrl'] as String?,
       weight: ((json['weight'] ?? 0) as num).toDouble(),
       height: ((json['height'] ?? 0) as num).toDouble(),
@@ -43,14 +43,32 @@ class UserProfileModel extends UserProfile {
     );
   }
 
+  factory UserProfileModel.fromEntity(UserProfile entity) {
+    return UserProfileModel(
+      userId: entity.userId,
+      email: entity.email,
+      name: entity.name,
+      photoUrl: entity.photoUrl,
+      weight: entity.weight,
+      height: entity.height,
+      age: entity.age,
+      gender: entity.gender,
+      activityLevel: entity.activityLevel,
+      goal: entity.goal,
+      dailyCalorieTarget: entity.dailyCalorieTarget,
+      createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'userId': userId,
       'email': email,
-      'name': name,
+      'full_name': name,
       'photoUrl': photoUrl,
-      'weight': weight,
-      'height': height,
+      'weight_kg': weight,
+      'height_cm': height,
       'age': age,
       'gender': gender,
       'activityLevel': activityLevel,
