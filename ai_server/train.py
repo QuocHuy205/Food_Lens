@@ -1,6 +1,6 @@
 """
 Training Pipeline for Food AI Model
-Train từ dataset Vietnamese Food
+Train từ dataset Vietnamese Food - GPU Optimized
 """
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
@@ -8,18 +8,33 @@ from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.layers import GlobalAveragePooling2D, Dense, Dropout, Input
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
+from tensorflow.keras import mixed_precision
 import numpy as np
 import json
 from pathlib import Path
 import logging
 
 from config import (
-    DATA_DIR, MODELS_DIR, IMG_SIZE, BATCH_SIZE, EPOCHS, NUM_CLASSES,
-    MODEL_PATH, TFLITE_PATH, CLASSES_PATH
+    DATASET_DIR, MODELS_DIR, IMG_SIZE, BATCH_SIZE, EPOCHS, NUM_CLASSES,
+    VALIDATION_SPLIT, MODEL_PATH, TFLITE_PATH, CLASSES_PATH,
+    USE_GPU, MIXED_PRECISION
 )
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
+
+# Enable GPU + Mixed Precision
+if USE_GPU:
+    gpus = tf.config.list_physical_devices('GPU')
+    if gpus:
+        logger.info(f"🚀 {len(gpus)} GPU(s) detected: {gpus}")
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+
+if MIXED_PRECISION:
+    policy = mixed_precision.Policy('mixed_float16')
+    mixed_precision.set_global_policy(policy)
+    logger.info("✨ Mixed Precision enabled (FP16)")
 
 
 class FoodAITrainer:
@@ -33,63 +48,61 @@ class FoodAITrainer:
         self.model = None
         self.history = None
     
-    def prepare_data(self, data_dir=DATA_DIR / "vietnamese_food_101"):
+    def prepare_data(self, data_dir=DATASET_DIR):
         """
-        Prepare data generators với augmentation
-        
+        Prepare data generators with augmentation from a single root directory.
+
         Expected structure:
-        data/vietnamese_food_101/
-        ├── train/
-        │   ├── pho/       (ảnh)
-        │   ├── banh_mi/   (ảnh)
-        │   └── ...
-        └── val/
-            ├── pho/
-            ├── banh_mi/
-            └── ...
+        data/images/
+        ├── pho/
+        │   ├── pho_001.jpg
+        │   ├── pho_002.jpg
+        ├── banh_mi/
+        │   ├── banh_mi_001.jpg
+        └── ...
         """
         logger.info(f"Loading data from {data_dir}")
-        
-        train_dir = data_dir / "train"
-        val_dir = data_dir / "val"
-        
-        if not train_dir.exists():
-            raise ValueError(f"Training data not found: {train_dir}")
-        
-        # Data Augmentation
-        train_datagen = ImageDataGenerator(
-            rescale=1./255,
+
+        if not data_dir.exists():
+            raise ValueError(f"Training data not found: {data_dir}")
+
+        data_gen = ImageDataGenerator(
+            rescale=1.0 / 255.0,
             rotation_range=20,
             width_shift_range=0.2,
             height_shift_range=0.2,
             shear_range=0.2,
             zoom_range=0.2,
             horizontal_flip=True,
-            fill_mode='nearest'
+            fill_mode="nearest",
+            validation_split=VALIDATION_SPLIT,
         )
-        
-        val_datagen = ImageDataGenerator(rescale=1./255)
-        
-        # Load generators
-        train_generator = train_datagen.flow_from_directory(
-            train_dir,
+
+        train_generator = data_gen.flow_from_directory(
+            data_dir,
             target_size=(self.img_size, self.img_size),
             batch_size=self.batch_size,
-            class_mode='categorical',
-            shuffle=True
+            class_mode="categorical",
+            subset="training",
+            shuffle=True,
         )
-        
-        val_generator = val_datagen.flow_from_directory(
-            val_dir,
+
+        val_generator = data_gen.flow_from_directory(
+            data_dir,
             target_size=(self.img_size, self.img_size),
             batch_size=self.batch_size,
-            class_mode='categorical',
-            shuffle=False
+            class_mode="categorical",
+            subset="validation",
+            shuffle=False,
         )
-        
-        logger.info(f"✅ Data loaded: {train_generator.samples} train, {val_generator.samples} val")
-        logger.info(f"Classes: {train_generator.class_indices}")
-        
+
+        logger.info(
+            "✅ Data loaded: %s train, %s val",
+            train_generator.samples,
+            val_generator.samples,
+        )
+        logger.info("Classes: %s", train_generator.class_indices)
+
         return train_generator, val_generator
     
     def build_model(self):
@@ -111,14 +124,15 @@ class FoodAITrainer:
             base_model,
             GlobalAveragePooling2D(),
             Dense(256, activation='relu'),
-            Dropout(0.5),
+            Dropout(0.3),  # Reduced from 0.5 to prevent underfitting
             Dense(128, activation='relu'),
-            Dropout(0.3),
+            Dropout(0.2),  # Reduced from 0.3
             Dense(self.num_classes, activation='softmax')
         ])
         
-        # Compile
-        optimizer = Adam(learning_rate=0.001)
+        # Compile with optimized learning rate
+        # Increased from 0.001 to 0.005 for faster convergence
+        optimizer = Adam(learning_rate=0.005)
         model.compile(
             optimizer=optimizer,
             loss='categorical_crossentropy',
@@ -139,31 +153,34 @@ class FoodAITrainer:
         callbacks = [
             EarlyStopping(
                 monitor='val_loss',
-                patience=5,
+                patience=15,  # Increased from 5 to allow model more training time
                 restore_best_weights=True,
                 verbose=1
             ),
             ReduceLROnPlateau(
                 monitor='val_loss',
                 factor=0.5,
-                patience=3,
+                patience=5,  # Reduce LR if val_loss plateaus
                 min_lr=1e-7,
                 verbose=1
             ),
             ModelCheckpoint(
-                str(MODELS_DIR / "best_model.h5"),
+                str(MODEL_PATH),
                 monitor='val_accuracy',
                 save_best_only=True,
                 verbose=1
             )
         ]
         
+        steps_per_epoch = max(1, train_generator.samples // self.batch_size)
+        validation_steps = max(1, val_generator.samples // self.batch_size)
+
         history = self.model.fit(
             train_generator,
             validation_data=val_generator,
             epochs=self.epochs,
-            steps_per_epoch=train_generator.samples // self.batch_size,
-            validation_steps=val_generator.samples // self.batch_size,
+            steps_per_epoch=steps_per_epoch,
+            validation_steps=validation_steps,
             callbacks=callbacks,
             verbose=1
         )
@@ -200,12 +217,11 @@ class FoodAITrainer:
     def save_classes(self, train_generator, classes_path=CLASSES_PATH):
         """Save class names"""
         classes = train_generator.class_indices
-        # Reverse: {"pho": 0} → {"0": "pho"}
         classes_dict = {str(v): k for k, v in classes.items()}
-        
-        with open(classes_path, 'w') as f:
-            json.dump(classes_dict, f, indent=2)
-        
+
+        with open(classes_path, 'w', encoding='utf-8') as f:
+            json.dump(classes_dict, f, indent=2, ensure_ascii=False)
+
         logger.info(f"✅ Classes saved: {classes_path}")
 
 
@@ -217,10 +233,11 @@ def main():
         
         # Prepare data
         train_gen, val_gen = trainer.prepare_data()
-        
+        trainer.num_classes = train_gen.num_classes
+
         # Build model
         trainer.build_model()
-        
+
         # Train
         trainer.train(train_gen, val_gen)
         

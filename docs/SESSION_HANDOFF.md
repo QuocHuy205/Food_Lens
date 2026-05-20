@@ -1,6 +1,240 @@
-﻿# SESSION HANDOFF - Compact (Updated Apr 20, 2026)
+﻿# SESSION HANDOFF - Compact (Updated May 14, 2026)
 
-Muc tieu: File gon, de AI session sau tiep quan nhanh. Giữ chi tiet session gan nhat, tom tat day du cac session truoc.
+Mục tiêu: file gọn, để AI session sau nắm nhanh trạng thái mới nhất. Giữ chi tiết session gần nhất, tóm tắt các session trước.
+
+---
+
+## Session Mới Nhất - Session 28 (May 14, 2026 - Daily Calories TDEE Fix + Legacy 2200 Migration)
+
+### Đã hoàn thành
+
+- Sửa nguồn mục tiêu của Daily Calories ở Home:
+  - `lib/features/home/presentation/screens/home_screen.dart` không còn dùng `2200` hardcoded.
+  - Home ưu tiên `dailyCalorieTarget` đã lưu trong profile.
+  - Nếu profile cũ còn thiếu target hoặc đang giữ giá trị legacy `2200`, Home sẽ tính TDEE từ chính profile.
+
+- Tự migrate profile cũ khi load:
+  - `lib/features/profile/data/repositories/profile_repository_impl.dart` đã thêm bước normalize profile khi đọc Firestore.
+  - Nếu `dailyCalorieTarget == 2200` legacy, repository tính lại TDEE từ `gender`, `weight`, `height`, `age`, `activityLevel`.
+  - Giá trị mới được ghi ngược lại Firestore để các lần load sau dùng đúng TDEE.
+
+- Loại bỏ fallback cứng ở luồng tạo user mới:
+  - `lib/features/auth/data/repositories/auth_repository_impl.dart` không còn set `dailyCalorieTarget: 2200` khi upsert user doc.
+  - User mới sẽ lấy target từ profile/TDEE flow thay vì hardcode.
+
+- Đồng bộ thông báo và hiển thị calories:
+  - Scan result khi lưu lịch sử hiển thị snackbar theo format `quantity • kcal`.
+  - History khi chỉnh số lượng cũng dùng cùng format đó.
+  - Calories được round trước khi lưu và trước khi render để tránh số lẻ dài như `234.4324`.
+
+### Trạng thái hiện tại
+
+- Daily Calories ở Home đang lấy target từ profile TDEE đúng hướng.
+- Profile cũ có thể tự được sửa dần khi user mở app và load profile.
+- Lưu scan và chỉnh lịch sử đã đồng bộ hiển thị số lượng + kcal.
+- `flutter analyze` đã chạy sạch sau các thay đổi này.
+
+### Cần nhớ cho session sau
+
+1. Nếu user vẫn thấy `2200`, kiểm tra dữ liệu profile cũ trong Firestore trước, vì repository chỉ migrate khi profile được load.
+2. Nếu cần, quét thêm các màn khác có số cứng `2200` để phân biệt với Daily Calories của Home, ví dụ Stats chart.
+3. Khi sửa UI calories, luôn round ở cả lúc lưu và lúc hiển thị để tránh lệch giữa Home, History, và snackbar.
+
+---
+
+## Session Mới Nhất - Session 27 (May 12, 2026 - Nutrition DB Auto-Fill + Progress Refresh)
+
+### Đã hoàn thành
+
+- Sửa nguyên nhân label chung “Món ăn hỗn hợp”:
+  - `ai_server/nutrition_db.py` trước đây fallback về `DEFAULT_FOOD` khi thiếu mapping cho class key.
+  - Đã thêm cơ chế tự sinh entry cho class thiếu mapping thay vì trả fallback cứng.
+  - Entry sinh ra có:
+    - `name_vi` humanized theo class key.
+    - `calories_per_100g` và `nutrition_per_100g` ước lượng theo nhóm món.
+  - Mục tiêu là giữ UI đúng tên món theo model đã train, không bị generic label.
+
+- Đồng bộ lại tài liệu tiến độ:
+  - `docs/PROGRESS.md` đã được cập nhật lại theo trạng thái hiện tại.
+  - Phản ánh server, model, app, scan flow, auth, profile, history, stats đã ở trạng thái core hoàn tất.
+
+### Trạng thái hiện tại
+
+- AI server đã train lại model và có metrics eval mới.
+- Flutter app đã wire đầy đủ luồng chính.
+- Vấn đề cần kiểm tra tiếp là server reload và verify response thực tế sau mapping mới.
+
+### Cần làm ngay sau session này
+
+1. Restart AI server để nạp `nutrition_db.py` mới.
+2. Test lại request phân tích ảnh với class cụ thể, đặc biệt `bun_dau_mam_tom`.
+3. Kiểm tra JSON trả về có `food_name_vi` đúng và `top_predictions` không còn fallback sai.
+4. Chạy lại app nếu cần để chắc chắn UI hiển thị đúng.
+
+---
+
+## Session Gan Nhat - Session 26 (May 20, 2026 - Cloudinary Debug + Home Fixes)
+
+### Da hoan thanh
+
+- Trang thai Cloudinary datasource:
+  - `lib/features/scan/data/datasources/cloudinary_datasource.dart` da goi upload toi Cloudinary URL chinh xac.
+  - `lib/core/services/cloudinary_service.dart` da duoc tung cao:
+    - Them debug output chi tiet cho tung buoc (load credentials, POST, response).
+    - Them timeout handler (30s).
+    - Them socket/network exception handling.
+    - Them file exist check truoc upload.
+    - Khong con nhan cau truyen hay timeout nhat.
+  - Can kiem tra `.env` co CLOUDINARY_CLOUD_NAME va CLOUDINARY_UPLOAD_PRESET kh.
+  - Avatar upload su dung chung CloudinaryService -> neu avatar fail thi van la Cloudinary config.
+
+- Sua Home Daily Calories:
+  - `progress = (consumedCalories / goalCalories).clamp(0, 1)` -> progress khong vuot 100%.
+  - `remainingCalories = (goalCalories - consumedCalories).clamp(0, infinity).round()` -> remaining khong the am.
+  - Home bao hien thi di danh "Remaining" khong bao gio am con tim.
+
+- Firestore persistence verification:
+  - Scan result flow da wire:
+    - `ScanScreen` -> chup/chon anh -> `ScanViewModel.analyzeImage()`.
+    - `ScanViewModel` -> goi `ScanRepository.analyzeFood()` -> upload Cloudinary -> `AiRemoteDatasource.analyzeFoodByUrl()`.
+    - `ScanResultScreen` -> load Firebase uid -> `ScanViewModel.saveScanHistory()` -> `ScanRepository.saveScanHistory()` -> `FirestoreDatasource.saveScanHistory()`.
+    - Firestore path: `users/{uid}/scans/{scanId}`.
+  - Neu scan data van khong luu, likely cause: 1) Cloudinary upload fail -> khong co imageUrl -> skip save, 2) Firebase auth uid null (check FirebaseAuth.instance.currentUser), 3) Firestore rules reject write.
+
+- Stats topbar:
+  - `lib/features/stats/presentation/screens/stats_screen.dart` da co `backgroundColor: AppColors.primary` + `foregroundColor: Colors.white`.
+  - Topbar nay sync voi Home + History top bar, giao dien dong nhat.
+
+### Trang thai hien tai
+
+- Home: Real history + profile data, no hardcoded calories, remaining clamped >= 0.
+- Stats: Topbar fixed, period selector working.
+- History: Firestore-backed, search/filter wired.
+- Cloudinary: Enhanced debug, timeout handle, exception catch.
+- App lang (vi + en) va theme (light/dark) intact.
+- `flutter analyze --no-fatal-infos`: 1 unrelated warning in old nutrition stats (unused \_buildMacroInfo).
+
+### Luu y cho session sau - TRANG CAI DAT / DEBUG
+
+- Neu user van bao "Cloudinary khong up anh duoc":
+  1. Check `.env` file co day du CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET, CLOUDINARY_API_KEY hay khong.
+  2. Chay app, mo app logs -> tim `[Cloudinary]` debug output -> xem exact error.
+  3. Test Cloudinary credentials bang curl truc tiep tren terminal de loai tru app code.
+  4. Neu Cloudinary fail thi scan save cung khong co anh_url -> can debug fix Cloudinary truoc.
+- Neu user bao "scan data khong luu vao Firestore":
+  1. Check Firebase uid co load khong: `FirebaseAuth.instance.currentUser?.uid` phai khac null.
+  2. Check Firestore rules: `allow read, write: if request.auth.uid == resource.data.userId;` hoac tuong tu.
+  3. Neu upload Cloudinary fail, scan data se khong luu (khong co imageUrl).
+  4. Neu upload thanh cong, check Firestore console xem doc da dung khong.
+- Neu user bao "avatar khong up duoc":
+  - Avatar goi chung `CloudinaryService` -> kiem tra Cloudinary credentials truoc tien.
+  - Check `lib/features/profile/presentation/screens/edit_profile_screen.dart` -> \_avatarUrl va \_isUploadingAvatar logic.
+- Neu "Daily Calories" van bao am:
+  - Xem HomeScreen tay code dat co dung: `remainingCalories.clamp(0, infinity)` chưa?
+  - Neu da co thi khong the am con tim.
+
+### Next Phase
+
+- Kiem tra Cloudinary config khong?
+- Chay `flutter run`, chup anh, xem debug log `[Cloudinary]` - neu fail la gi chi tiet?
+- Sau fix Cloudinary thi scan save va avatar upload se thanh cong.
+
+---
+
+## Session Gan Nhat Truoc - Session 25 (May 12, 2026 - ai_server Reorg + README Rewrite)
+
+### Da hoan thanh
+
+- Don lai `ai_server/` theo huong gon va on:
+  - Giữ lai core runtime files va xoa cache rác con sot.
+  - Khong doi logic server/inference vi he thong dang chay on dinh.
+- Viet lai `README_SERVER.md` cho dung cau truc hien tai:
+  - Mo ta day du folder, file chinh, API endpoints, train, Docker, va troubleshooting.
+  - Cap nhat cach chay server tren Windows voi `.venv311` va `uvicorn`.
+- Ghi lai context cho session sau:
+  - Server co 2 flow chinh: `/predict` va `/analyze`.
+  - Flutter scan flow da noi dung tang va san sang test end-to-end.
+
+### Trang thai hien tai
+
+- `ai_server/` gon hon, doc de hieu hon, va khong lam thay doi luong nghiep vu.
+- README da khop voi cach to chuc va cach khoi dong server hien tai.
+- Buoc tiep theo la tiep tuc test end-to-end tren app neu can.
+
+---
+
+## Session Gan Nhat - Session 24 (May 12, 2026 - Server Restart + App Wiring)
+
+### Da hoan thanh
+
+- Sua server luong analyze:
+  - Bo sung import `analyze_food_image` trong `main.py`.
+  - Restart lai uvicorn de nap code moi.
+  - Xac nhan `POST /analyze` tra `200` voi `image_url` that.
+- Noi lai flow scan cua Flutter theo dung tang:
+  - `ScanScreen` goi `ScanViewModel` thay vi tao datasource truc tiep.
+  - `ScanViewModel` dung `AnalyzeFoodUseCase`, `SaveScanHistoryUseCase`, va `ScanRepository`.
+  - `ScanRepositoryImpl` upload anh len Cloudinary truoc, sau do goi AI server bang `/analyze`.
+  - Co fallback ve `/predict` neu call theo URL khong thanh cong.
+- Tao provider DI cho scan:
+  - Them `Dio`, `AiRemoteDatasource`, `CloudinaryDatasource`, `FirestoreDatasource`, `ScanRepository`, va use case providers.
+- Validation:
+  - `get_errors` cho cac file touch trong scan flow = khong con loi.
+  - `GET /health`, `POST /predict`, va `POST /analyze` deu pass.
+
+### Trang thai hien tai
+
+- AI server da co day du hai luong:
+  - `/predict` cho multipart upload truc tiep.
+  - `/analyze` cho Cloudinary image URL.
+- Flutter scan flow da ket noi theo dung tang, khong con goi AI datasource truc tiep trong UI.
+- Buoc tiep theo phu hop nhat la chay `flutter run` / test scan end-to-end tren device.
+
+---
+
+## Session Gan Nhat - Session 23 (May 12, 2026 - ai_server Cleanup + Re-Validate)
+
+### Da hoan thanh
+
+- Don lai `ai_server/` de giam roi:
+  - Xoa cac script test/benchmark/diagnostic cu khong con can cho runtime.
+  - Xoa cac anh mau phuc vu test script cu.
+- Giu lai cac file core cho server:
+  - `main.py`, `inference.py`, `schemas.py`, `config.py`, `nutrition_db.py`, `requirements.txt`, `train.py`, `models/`, `data/`.
+- Re-validate sau cleanup:
+  - `/health` van tra `200` va `model_loaded: true`.
+  - `/predict` van tra `200` tren anh that trong dataset.
+
+### Trang thai hien tai
+
+- `ai_server/` gon hon, it file phu, de tiep tuc phat trien luong analyze/return ket qua.
+- Server van hoat dong on dinh sau cleanup.
+- Buoc tiep theo la tiep tuc toi uu API/analyze flow neu can, hoac gan Flutter vao endpoint server that.
+
+---
+
+## Session Gan Nhat - Session 22 (May 12, 2026 - AI Server Training + Validation)
+
+### Da hoan thanh
+
+- Chay va xac nhan lai model AI tren anh that:
+  - `test_real_image.py` cho ket qua dung voi `banh_beo`.
+  - Confidence top-1: 71.9%, top-3 co `banh_beo`, `banh_cuon`, `banh_duc`.
+- Test toan bo API AI server:
+  - `test_api.py` return `Status: 200`.
+  - Response co day du `food_name`, `confidence`, `calories_estimated`, `nutrition`, `top_predictions`, `inference_time_ms`.
+  - Thoi gian inference thuc te khoang 123ms.
+- Kiem tra health endpoint:
+  - `GET /health` tra ve `status: healthy` va `model_loaded: true`.
+- Xac nhan model va pipeline da san sang cho app Flutter:
+  - Model da load duoc 100 classes.
+  - Server da tra ve ket qua an uong va dinh duong on dinh.
+
+### Trang thai hien tai
+
+- AI server dang hoat dong tot, co the dung cho scan flow that.
+- Model da qua kiem tra voi anh thuc te va API test.
+- Buoc tiep theo phu hop nhat la wire Flutter scan flow vao endpoint `/predict` hoac `/analyze`.
 
 ---
 

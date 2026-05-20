@@ -1,15 +1,23 @@
 """
 Pydantic models for API requests/responses
 """
-from pydantic import BaseModel
-from typing import List, Optional, Dict
 from datetime import datetime
+from typing import Dict, List, Optional
+
+from pydantic import BaseModel
 
 
 class AnalyzeRequest(BaseModel):
-    """Request to analyze food from image URL"""
+    """Legacy request to analyze food from image URL."""
     image_url: str
-    user_id: str
+    user_id: str | None = None
+
+
+class PredictResponse(BaseModel):
+    """Response from multipart prediction endpoint."""
+    success: bool
+    data: Optional[Dict] = None
+    error: Optional[str] = None
 
 
 class NutritionInfo(BaseModel):

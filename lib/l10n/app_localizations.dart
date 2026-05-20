@@ -356,35 +356,11 @@ abstract class AppLocalizations {
   /// **'Good evening'**
   String get goodEvening;
 
-  /// No description provided for @focusNutritiousBreakfast.
-  ///
-  /// In en, this message translates to:
-  /// **'Focus: Nutritious breakfast'**
-  String get focusNutritiousBreakfast;
-
-  /// No description provided for @focusBalancedLunch.
-  ///
-  /// In en, this message translates to:
-  /// **'Focus: Balanced lunch'**
-  String get focusBalancedLunch;
-
-  /// No description provided for @focusLightDinner.
-  ///
-  /// In en, this message translates to:
-  /// **'Focus: Light dinner'**
-  String get focusLightDinner;
-
   /// No description provided for @hiName.
   ///
   /// In en, this message translates to:
   /// **'Hi, {name}!'**
   String hiName(Object name);
-
-  /// No description provided for @onTrack.
-  ///
-  /// In en, this message translates to:
-  /// **'On track'**
-  String get onTrack;
 
   /// No description provided for @dailyCalories.
   ///
@@ -446,12 +422,6 @@ abstract class AppLocalizations {
   /// **'AI insight'**
   String get aiInsight;
 
-  /// No description provided for @greatPaceTip.
-  ///
-  /// In en, this message translates to:
-  /// **'Great pace today. Keep dinner light and protein-focused.'**
-  String get greatPaceTip;
-
   /// No description provided for @consumed.
   ///
   /// In en, this message translates to:
@@ -463,12 +433,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remaining'**
   String get remaining;
-
-  /// No description provided for @dailyGoalProgress.
-  ///
-  /// In en, this message translates to:
-  /// **'{percent}% of daily goal • {remaining} kcal left'**
-  String dailyGoalProgress(Object percent, Object remaining);
 
   /// No description provided for @kcal.
   ///

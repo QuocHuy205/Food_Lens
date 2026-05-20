@@ -1,17 +1,18 @@
 """
 Food AI Server - FastAPI Backend
-Nhận request từ Flutter app, xử lý AI inference, trả về kết quả
+Nhận ảnh multipart từ Flutter app, xử lý AI inference, trả về kết quả.
 """
-from fastapi import FastAPI, HTTPException, status
+import logging
+import time
+from datetime import datetime
+
+from fastapi import FastAPI, File, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import logging
-from datetime import datetime
-import time
 
 from config import ALLOWED_ORIGINS, DEBUG, HOST, PORT
-from schemas import AnalyzeRequest, AnalyzeResponse, HealthResponse
-from inference import get_model, analyze_food_image
+from inference import analyze_food_image, analyze_uploaded_image, get_model
+from schemas import AnalyzeRequest, AnalyzeResponse, HealthResponse, PredictResponse
 
 # ===== LOGGING =====
 logging.basicConfig(
@@ -68,7 +69,7 @@ async def health_check():
     model = get_model()
     return HealthResponse(
         status="healthy" if model.is_loaded else "degraded",
-        message="Food AI server is running" if model.is_loaded else "Model not loaded - using mock",
+        message="Food AI server is running" if model.is_loaded else "Model not loaded",
         timestamp=datetime.now(),
         model_loaded=model.is_loaded,
     )
@@ -92,6 +93,61 @@ async def root():
 
 # ===== MAIN ENDPOINT: ANALYZE FOOD =====
 @app.post(
+    "/predict",
+    response_model=PredictResponse,
+    status_code=status.HTTP_200_OK,
+    tags=["Inference"]
+)
+async def predict_food(image: UploadFile = File(...)):
+    """
+    Predict food from uploaded image bytes.
+
+    Flutter sends multipart/form-data with key `image`.
+    The server decodes the image in memory, resizes to model input,
+    preprocesses, runs the TensorFlow model, and returns the prediction.
+    """
+    started_at = time.perf_counter()
+
+    try:
+        if not image.content_type or not image.content_type.startswith("image/"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Uploaded file must be an image",
+            )
+
+        image_bytes = await image.read()
+        if not image_bytes:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Empty image payload",
+            )
+
+        result = analyze_uploaded_image(image_bytes)
+        result["response_time_ms"] = round((time.perf_counter() - started_at) * 1000, 2)
+
+        logger.info(
+            "Prediction complete (%sms): %s @ %s",
+            result["response_time_ms"],
+            result["food_name"],
+            result["confidence"],
+        )
+
+        return PredictResponse(success=True, data=result)
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        logger.warning("Validation error: %s", e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        logger.exception("Prediction failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Prediction failed: {e}",
+        )
+
+
+@app.post(
     "/analyze",
     response_model=AnalyzeResponse,
     status_code=status.HTTP_200_OK,
@@ -99,63 +155,42 @@ async def root():
 )
 async def analyze_food(request: AnalyzeRequest):
     """
-    🔍 Analyze food từ image URL
-    
+    🔍 Analyze food từ image URL.
+
     Flow:
     1. Flutter app upload ảnh lên Cloudinary
     2. Send POST /analyze với image_url
     3. Server download ảnh, run AI inference
     4. Return: food name + calories + nutrition
-    
-    Args:
-        request: {image_url, user_id}
-    
-    Returns:
-        {success, data: {food_name, calories, nutrition, ...}}
-    
-    Example:
-        ```json
-        POST /analyze
-        {
-            "image_url": "https://res.cloudinary.com/...",
-            "user_id": "user123"
-        }
-        ```
     """
-    start_time = time.time()
-    
-    try:
-        logger.info(f"📸 Analyzing food for user {request.user_id}")
-        logger.debug(f"Image URL: {request.image_url[:50]}...")
-        
-        # ===== RUN INFERENCE =====
-        result = await analyze_food_image(request.image_url)
-        
-        # ===== BUILD RESPONSE =====
-        response_time_ms = (time.time() - start_time) * 1000
-        result["response_time_ms"] = round(response_time_ms, 2)
-        
-        logger.info(
-            f"✅ Analysis complete ({response_time_ms:.0f}ms): "
-            f"{result['food_name']} @ {result['confidence']:.0%}"
-        )
-        
-        return AnalyzeResponse(
-            success=True,
-            data=result,
-        )
-        
-    except ValueError as e:
-        logger.warning(f"⚠️ Validation error: {e}")
+    started_at = time.perf_counter()
+
+    if not request.image_url:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            detail="image_url cannot be empty",
         )
+
+    try:
+        result = analyze_food_image(request.image_url)
+        result["response_time_ms"] = round((time.perf_counter() - started_at) * 1000, 2)
+
+        logger.info(
+            "Remote prediction complete (%sms): %s @ %s",
+            result["response_time_ms"],
+            result["food_name"],
+            result["confidence"],
+        )
+
+        return AnalyzeResponse(success=True, data=result)
+    except ValueError as e:
+        logger.warning("Analyze request validation failed: %s", e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
-        logger.error(f"❌ Server error: {e}", exc_info=True)
+        logger.exception("Analyze request failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Inference failed: " + str(e)
+            detail=f"Analyze failed: {e}"
         )
 
 

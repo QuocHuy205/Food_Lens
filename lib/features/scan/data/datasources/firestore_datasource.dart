@@ -21,6 +21,9 @@ abstract class FirestoreDatasource {
 
   /// Xoá một scan history
   Future<void> deleteScanHistory(String userId, String scanId);
+
+  /// Cập nhật một scan history
+  Future<void> updateScanHistory(String userId, ScanHistoryModel history);
 }
 
 class FirestoreDatasourceImpl implements FirestoreDatasource {
@@ -97,6 +100,21 @@ class FirestoreDatasourceImpl implements FirestoreDatasource {
           .delete();
     } catch (e) {
       throw FirestoreException('Failed to delete scan history: $e');
+    }
+  }
+
+  @override
+  Future<void> updateScanHistory(
+      String userId, ScanHistoryModel history) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('scans')
+          .doc(history.id)
+          .set(history.toJson(), SetOptions(merge: true));
+    } catch (e) {
+      throw FirestoreException('Failed to update scan history: $e');
     }
   }
 }

@@ -1,20 +1,26 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:food_lens/l10n/app_localizations.dart';
 import 'package:food_lens/core/theme/app_colors.dart';
 import 'package:food_lens/core/widgets/animated_widgets.dart';
 import 'package:food_lens/core/widgets/app_bottom_nav.dart';
+import '../../../scan/domain/entities/scan_history.dart';
+import '../providers/history_provider.dart';
+import '../widgets/history_list_item.dart';
 
-// HISTORY SCREEN - With animations
-// Refactored: Page enter + staggered list + animated filter chips
+// HISTORY SCREEN - With animations + Riverpod
+// Refactored: Page enter + staggered list + animated filter chips + real Firestore data
 
-class HistoryScreen extends StatefulWidget {
+class HistoryScreen extends ConsumerStatefulWidget {
   const HistoryScreen({super.key});
 
   @override
-  State<HistoryScreen> createState() => _HistoryScreenState();
+  ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-class _HistoryScreenState extends State<HistoryScreen>
+class _HistoryScreenState extends ConsumerState<HistoryScreen>
     with TickerProviderStateMixin {
   // Animation controllers
   late AnimationController _pageEnterController;
@@ -23,66 +29,7 @@ class _HistoryScreenState extends State<HistoryScreen>
   late Animation<double> _fadeAnimation;
 
   // State
-  String selectedFilter = 'today';
   final searchController = TextEditingController();
-  final List<Map<String, dynamic>> _historyItems = [
-    {
-      'icon': Icons.ramen_dining,
-      'name': 'Fresh Tuna Poke Bowl',
-      'time': '12:30 PM',
-      'calories': 340,
-      'type': 'lunch'
-    },
-    {
-      'icon': Icons.eco,
-      'name': 'Avocado Salad',
-      'time': '7:15 PM',
-      'calories': 280,
-      'type': 'dinner'
-    },
-    {
-      'icon': Icons.egg_alt,
-      'name': 'Scrambled Eggs',
-      'time': '8:00 AM',
-      'calories': 180,
-      'type': 'breakfast'
-    },
-    {
-      'icon': Icons.apple,
-      'name': 'Apple & Almonds',
-      'time': '3:30 PM',
-      'calories': 120,
-      'type': 'snack'
-    },
-    {
-      'icon': Icons.lunch_dining,
-      'name': 'Turkey Sandwich',
-      'time': '12:00 PM',
-      'calories': 320,
-      'type': 'lunch'
-    },
-    {
-      'icon': Icons.local_drink,
-      'name': 'Banana Smoothie',
-      'time': '7:30 AM',
-      'calories': 200,
-      'type': 'breakfast'
-    },
-    {
-      'icon': Icons.outdoor_grill,
-      'name': 'Grilled Chicken',
-      'time': '6:45 PM',
-      'calories': 250,
-      'type': 'dinner'
-    },
-    {
-      'icon': Icons.spa,
-      'name': 'Carrot Sticks',
-      'time': '4:00 PM',
-      'calories': 35,
-      'type': 'snack'
-    },
-  ];
 
   @override
   void initState() {
@@ -90,6 +37,10 @@ class _HistoryScreenState extends State<HistoryScreen>
     _setupAnimations();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _pageEnterController.forward();
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId != null) {
+        ref.read(historyViewModelProvider.notifier).loadHistory(userId);
+      }
     });
   }
 
@@ -150,6 +101,11 @@ class _HistoryScreenState extends State<HistoryScreen>
                     padding: const EdgeInsets.all(16),
                     child: TextField(
                       controller: searchController,
+                      onChanged: (value) {
+                        ref
+                            .read(historyViewModelProvider.notifier)
+                            .searchFood(value);
+                      },
                       decoration: InputDecoration(
                         hintText: l10n.searchHistoryPlaceholder,
                         prefixIcon: Icon(Icons.search, color: textSecondary),
@@ -187,20 +143,24 @@ class _HistoryScreenState extends State<HistoryScreen>
                     child: Row(
                       children: [
                         {'key': 'today', 'label': l10n.today},
-                        {'key': 'yesterday', 'label': l10n.yesterday},
-                        {'key': 'last7Days', 'label': l10n.last7Days},
-                        {'key': 'last30Days', 'label': l10n.last30Days},
+                        {'key': 'week', 'label': l10n.last7Days},
+                        {'key': 'month', 'label': l10n.last30Days},
                       ].asMap().entries.map((entry) {
                         final filter = entry.value['key'] as String;
                         final label = entry.value['label'] as String;
                         final index = entry.key;
+                        final historyState =
+                            ref.watch(historyViewModelProvider);
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: _AnimatedFilterChip(
                             label: label,
-                            isSelected: selectedFilter == filter,
-                            onTap: () =>
-                                setState(() => selectedFilter = filter),
+                            isSelected: historyState.currentFilter == filter,
+                            onTap: () {
+                              ref
+                                  .read(historyViewModelProvider.notifier)
+                                  .filterByDate(filter);
+                            },
                             delay: Duration(milliseconds: 200 + (index * 50)),
                           ),
                         );
@@ -212,48 +172,111 @@ class _HistoryScreenState extends State<HistoryScreen>
                 // History List
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _historyItems.length,
-                    itemBuilder: (context, index) {
-                      final item = _historyItems[index];
-                      return FadeInWidget(
-                        delay: Duration(milliseconds: 250 + (index * 60)),
-                        child: Dismissible(
-                          key: Key('scan_$index'),
-                          direction: DismissDirection.endToStart,
-                          onDismissed: (direction) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(l10n.scanDeleted),
-                                action: SnackBarAction(
-                                  label: l10n.undo,
-                                  onPressed: () {},
+                  child: Consumer(
+                    builder: (context, ref, _) {
+                      final historyState = ref.watch(historyViewModelProvider);
+                      final filteredItems = historyState.filteredItems;
+
+                      return historyState.history.when(
+                        loading: () => const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 32),
+                            child: CircularProgressIndicator(),
+                          ),
+                        ),
+                        error: (error, stackTrace) => Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 32),
+                            child: Text(
+                              _localizedMessage(
+                                context,
+                                vi: 'Lỗi tải lịch sử: $error',
+                                en: 'Failed to load history: $error',
+                              ),
+                              style: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.6),
+                              ),
+                            ),
+                          ),
+                        ),
+                        data: (data) {
+                          if (filteredItems.isEmpty) {
+                            return Center(
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 32),
+                                child: Text(
+                                  _localizedMessage(
+                                    context,
+                                    vi: 'Chưa có dữ liệu',
+                                    en: 'No history yet',
+                                  ),
+                                  style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.6),
+                                  ),
                                 ),
                               ),
                             );
-                          },
-                          background: Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            decoration: BoxDecoration(
-                              color: AppColors.error,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 20),
-                            child:
-                                const Icon(Icons.delete, color: Colors.white),
-                          ),
-                          child: _HistoryListItem(
-                            icon: item['icon'],
-                            name: item['name'],
-                            time:
-                                '${_localizedMealType(context, item['type'])} • ${item['time']}',
-                            calories: item['calories'],
-                            type: item['type'],
-                          ),
-                        ),
+                          }
+
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: filteredItems.length,
+                            itemBuilder: (context, index) {
+                              final item = filteredItems[index];
+                              return FadeInWidget(
+                                delay:
+                                    Duration(milliseconds: 250 + (index * 60)),
+                                child: Dismissible(
+                                  key: Key('scan_${item.id}'),
+                                  direction: DismissDirection.endToStart,
+                                  onDismissed: (direction) {
+                                    final userId =
+                                        FirebaseAuth.instance.currentUser?.uid;
+                                    if (userId == null) {
+                                      return;
+                                    }
+                                    ref
+                                        .read(historyViewModelProvider.notifier)
+                                        .deleteHistoryItem(userId, item.id);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(l10n.scanDeleted),
+                                      ),
+                                    );
+                                  },
+                                  background: Container(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.error,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.only(right: 20),
+                                    child: const Icon(Icons.delete,
+                                        color: Colors.white),
+                                  ),
+                                  child: HistoryListItem(
+                                    imageUrl: item.imageUrl,
+                                    name: item.foodName,
+                                    time:
+                                        '${item.createdAt.hour.toString().padLeft(2, '0')}:${item.createdAt.minute.toString().padLeft(2, '0')} • ${(item.quantity ?? 100).toStringAsFixed(0)}g',
+                                    calories: item.calories.round(),
+                                    type: '',
+                                    onEdit: () => _editQuantity(item),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
                       );
                     },
                   ),
@@ -282,6 +305,7 @@ class _HistoryScreenState extends State<HistoryScreen>
           fontWeight: FontWeight.w600,
         ),
       ),
+      centerTitle: true,
     );
   }
 
@@ -295,6 +319,132 @@ class _HistoryScreenState extends State<HistoryScreen>
           Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72),
     );
   }
+
+  Future<void> _editQuantity(ScanHistory item) async {
+    final newQuantity = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) {
+        return _QuantityEditDialog(
+          initialQuantity: (item.quantity ?? 100).round(),
+        );
+      },
+    );
+
+    if (newQuantity == null) {
+      return;
+    }
+
+    final oldQuantity = item.quantity ?? 100;
+    final ratio =
+        oldQuantity > 0 ? item.calories / oldQuantity : item.calories / 100;
+    final updatedCalories = (ratio * newQuantity).round().toDouble();
+    final updatedItem = ScanHistory(
+      id: item.id,
+      userId: item.userId,
+      foodName: item.foodName,
+      calories: updatedCalories,
+      imageUrl: item.imageUrl,
+      createdAt: item.createdAt,
+      quantity: newQuantity.toDouble(),
+    );
+
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) {
+      return;
+    }
+
+    await ref
+        .read(historyViewModelProvider.notifier)
+        .updateHistoryItem(updatedItem);
+
+    if (!mounted) return;
+    final error = ref.read(historyViewModelProvider).errorMessage;
+    if (error == null) {
+      final caloriesText = updatedCalories.round().toString();
+      final quantityText = '${newQuantity}g';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _localizedMessage(
+              context,
+              vi: 'Đã cập nhật lịch sử: $quantityText • $caloriesText kcal',
+              en: 'History updated: $quantityText • $caloriesText kcal',
+            ),
+          ),
+        ),
+      );
+    }
+  }
+}
+
+class _QuantityEditDialog extends StatefulWidget {
+  final int initialQuantity;
+
+  const _QuantityEditDialog({required this.initialQuantity});
+
+  @override
+  State<_QuantityEditDialog> createState() => _QuantityEditDialogState();
+}
+
+class _QuantityEditDialogState extends State<_QuantityEditDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.initialQuantity.toString(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final parsed = int.tryParse(_controller.text);
+    if (parsed != null && parsed > 0) {
+      Navigator.of(context).pop(parsed);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(AppLocalizations.of(context)!.quantity),
+      content: TextField(
+        controller: _controller,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        decoration: const InputDecoration(
+          hintText: '100',
+          suffixText: 'g',
+        ),
+        autofocus: true,
+        onSubmitted: (_) => _submit(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: Text(MaterialLocalizations.of(context).okButtonLabel),
+        ),
+      ],
+    );
+  }
+}
+
+String _localizedMessage(
+  BuildContext context, {
+  required String vi,
+  required String en,
+}) {
+  return Localizations.localeOf(context).languageCode == 'vi' ? vi : en;
 }
 
 // Helper widgets
@@ -398,140 +548,4 @@ class _AnimatedFilterChipState extends State<_AnimatedFilterChip>
   }
 }
 
-/// History list item with consistent styling
-class _HistoryListItem extends StatelessWidget {
-  final IconData icon;
-  final String name;
-  final String time;
-  final int calories;
-  final String type;
-
-  const _HistoryListItem({
-    required this.icon,
-    required this.name,
-    required this.time,
-    required this.calories,
-    required this.type,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final surface = Theme.of(context).colorScheme.surface;
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final textSecondary = onSurface.withValues(alpha: 0.72);
-    final borderColor = onSurface.withValues(alpha: 0.16);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
-      ),
-      child: Row(
-        children: [
-          // Emoji icon - Premium styled
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child:
-                Center(child: Icon(icon, size: 28, color: AppColors.primary)),
-          ),
-          const SizedBox(width: 16),
-          // Info - Enhanced typography
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: TextStyle(
-                    color: onSurface,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  time,
-                  style: TextStyle(
-                    color: textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Calories
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '$calories kcal',
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: _getTypeColor(type).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  type,
-                  style: TextStyle(
-                    color: _getTypeColor(type),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _getTypeColor(String type) {
-    switch (type) {
-      case 'breakfast':
-        return const Color(0xFFFF9800);
-      case 'lunch':
-        return const Color(0xFF2196F3);
-      case 'dinner':
-        return const Color(0xFF9C27B0);
-      case 'snack':
-        return const Color(0xFF4CAF50);
-      default:
-        return AppColors.textSecondary;
-    }
-  }
-}
-
-String _localizedMealType(BuildContext context, String type) {
-  final l10n = AppLocalizations.of(context)!;
-  switch (type) {
-    case 'breakfast':
-      return l10n.breakfast;
-    case 'lunch':
-      return l10n.lunch;
-    case 'dinner':
-      return l10n.dinner;
-    case 'snack':
-      return l10n.snack;
-    default:
-      return type;
-  }
-}
+// History list item moved to shared widget for reuse

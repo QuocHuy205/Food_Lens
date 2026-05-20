@@ -116,6 +116,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                 fontWeight: FontWeight.w600,
               ),
             ),
+            centerTitle: true,
             leading: IconButton(
               onPressed: () => context.go('/profile'),
               icon: const Icon(Icons.arrow_back_ios,
@@ -454,6 +455,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
     return TextField(
       controller: controller,
       keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
+      onChanged: (_) => setState(() {}),
       style: TextStyle(color: _onSurface(context), fontWeight: FontWeight.w500),
       decoration: InputDecoration(
         labelText: label,

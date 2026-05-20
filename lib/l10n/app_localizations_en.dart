@@ -138,21 +138,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get goodEvening => 'Good evening';
 
   @override
-  String get focusNutritiousBreakfast => 'Focus: Nutritious breakfast';
-
-  @override
-  String get focusBalancedLunch => 'Focus: Balanced lunch';
-
-  @override
-  String get focusLightDinner => 'Focus: Light dinner';
-
-  @override
   String hiName(Object name) {
     return 'Hi, $name!';
   }
-
-  @override
-  String get onTrack => 'On track';
 
   @override
   String get dailyCalories => 'Daily Calories';
@@ -187,19 +175,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiInsight => 'AI insight';
 
   @override
-  String get greatPaceTip =>
-      'Great pace today. Keep dinner light and protein-focused.';
-
-  @override
   String get consumed => 'Consumed';
 
   @override
   String get remaining => 'Remaining';
-
-  @override
-  String dailyGoalProgress(Object percent, Object remaining) {
-    return '$percent% of daily goal • $remaining kcal left';
-  }
 
   @override
   String get kcal => 'kcal';

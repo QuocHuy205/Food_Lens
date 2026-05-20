@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:fpdart/fpdart.dart';
 
 import '../../../../core/errors/failure.dart';
@@ -5,8 +7,8 @@ import '../entities/scan_result.dart';
 import '../entities/scan_history.dart';
 
 abstract class ScanRepository {
-  /// Phân tích ảnh từ URL
-  Future<Either<Failure, ScanResult>> analyzeFood(String imageUrl);
+  /// Phân tích ảnh từ file local
+  Future<Either<Failure, ScanResult>> analyzeFood(File imageFile);
 
   /// Lưu lịch sử scan
   Future<Either<Failure, void>> saveScanHistory(ScanHistory history);
@@ -19,6 +21,9 @@ abstract class ScanRepository {
     String userId,
     String date,
   );
+
+  /// Cập nhật lịch sử scan
+  Future<Either<Failure, void>> updateScanHistory(ScanHistory history);
 
   /// Xoá scan history
   Future<Either<Failure, void>> deleteScanHistory(String userId, String scanId);

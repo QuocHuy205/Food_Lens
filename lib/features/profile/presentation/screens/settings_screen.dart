@@ -18,8 +18,11 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: AppColors.primary,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              size: 20, color: Colors.white),
           onPressed: () {
             if (Navigator.of(context).canPop()) {
               context.pop();
@@ -28,7 +31,15 @@ class SettingsScreen extends ConsumerWidget {
             context.go('/profile');
           },
         ),
-        title: Text(l10n.settings),
+        title: Text(
+          l10n.settings,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

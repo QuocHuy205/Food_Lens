@@ -13,9 +13,17 @@ class AppConfig {
       dotenv.env['CLOUDINARY_UPLOAD_PRESET'] ?? 'your-upload-preset';
 
   // AI API — Load từ .env hoặc default
-  static String get aiApiBaseUrl =>
-      dotenv.env['AI_SERVER_URL'] ?? 'http://10.0.2.2:8000'; // Android emulator
+  static String get aiApiBaseUrl {
+    final configuredBaseUrl = dotenv.env['AI_API_BASE_URL'] ??
+        dotenv.env['AI_SERVER_URL'] ??
+        'http://10.0.2.2:8000';
 
+    return configuredBaseUrl.endsWith('/')
+        ? configuredBaseUrl.substring(0, configuredBaseUrl.length - 1)
+        : configuredBaseUrl;
+  }
+
+  static const String predictEndpoint = '/predict';
   static const String analyzeEndpoint = '/analyze';
 
   // App

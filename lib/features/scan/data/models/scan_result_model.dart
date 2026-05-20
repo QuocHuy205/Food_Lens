@@ -1,7 +1,6 @@
 import '../../domain/entities/scan_result.dart';
 
 class ScanResultModel extends ScanResult {
-  final String? foodNameVi;
   final double? portionGrams;
   final Map<String, dynamic>? nutrition;
   final List<dynamic>? topPredictions;
@@ -10,11 +9,11 @@ class ScanResultModel extends ScanResult {
 
   const ScanResultModel({
     required super.foodName,
+    super.foodNameVi,
     required super.estimatedCalories,
     required super.confidence,
     required super.scannedAt,
     super.imageUrl,
-    this.foodNameVi,
     this.portionGrams,
     this.nutrition,
     this.topPredictions,
@@ -39,6 +38,7 @@ class ScanResultModel extends ScanResult {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'food_name': foodName,

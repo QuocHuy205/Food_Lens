@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:fpdart/fpdart.dart';
 
 import '../../../../core/errors/failure.dart';
@@ -9,7 +11,7 @@ class AnalyzeFoodUseCase {
 
   AnalyzeFoodUseCase({required this.repository});
 
-  Future<Either<Failure, ScanResult>> call(String imageUrl) async {
-    return await repository.analyzeFood(imageUrl);
+  Future<Either<Failure, ScanResult>> call(File imageFile) async {
+    return await repository.analyzeFood(imageFile);
   }
 }

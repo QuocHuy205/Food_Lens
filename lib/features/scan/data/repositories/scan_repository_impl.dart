@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:fpdart/fpdart.dart';
 
 import '../../../../core/errors/failure.dart';
@@ -22,17 +24,27 @@ class ScanRepositoryImpl implements ScanRepository {
   });
 
   @override
-  Future<Either<Failure, ScanResult>> analyzeFood(String imageUrl) async {
+  Future<Either<Failure, ScanResult>> analyzeFood(File imageFile) async {
     try {
-      final result = await aiRemoteDatasource.analyzeFood(imageUrl);
-      final scanResult = ScanResultModel.fromJson(result);
+      final imageUrl = await cloudinaryDatasource.uploadImage(imageFile.path);
+      final result = await aiRemoteDatasource.analyzeFoodByUrl(imageUrl);
+      final scanResult = ScanResultModel.fromJson({
+        ...result,
+        'image_url': imageUrl,
+      });
       return Right(scanResult);
     } catch (e) {
-      return Left(
-        ServerFailure(
-          message: 'Lỗi phân tích ảnh: ${e.toString()}',
-        ),
-      );
+      try {
+        final result = await aiRemoteDatasource.analyzeFood(imageFile);
+        final scanResult = ScanResultModel.fromJson(result);
+        return Right(scanResult);
+      } catch (fallbackError) {
+        return Left(
+          ServerFailure(
+            message: 'Lỗi phân tích ảnh: ${fallbackError.toString()}',
+          ),
+        );
+      }
     }
   }
 
@@ -100,6 +112,34 @@ class ScanRepositoryImpl implements ScanRepository {
   }
 
   @override
+  Future<Either<Failure, void>> updateScanHistory(ScanHistory history) async {
+    try {
+      final historyModel = ScanHistoryModel(
+        id: history.id,
+        userId: history.userId,
+        foodName: history.foodName,
+        calories: history.calories,
+        imageUrl: history.imageUrl,
+        createdAt: history.createdAt,
+        quantity: history.quantity,
+      );
+
+      await firestoreDatasource.updateScanHistory(
+        history.userId,
+        historyModel,
+      );
+
+      return const Right(null);
+    } catch (e) {
+      return Left(
+        DatabaseFailure(
+          message: 'Lỗi cập nhật lịch sử: ${e.toString()}',
+        ),
+      );
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> deleteScanHistory(
     String userId,
     String scanId,
@@ -115,14 +155,4 @@ class ScanRepositoryImpl implements ScanRepository {
       );
     }
   }
-}
-
-/// Database failure
-class DatabaseFailure extends Failure {
-  const DatabaseFailure({required String message}) : super(message);
-}
-
-/// Server failure
-class ServerFailure extends Failure {
-  const ServerFailure({required String message}) : super(message);
 }

@@ -2,18 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:food_lens/l10n/app_localizations.dart';
 import 'package:food_lens/core/theme/app_colors.dart';
-import 'package:food_lens/core/services/cloudinary_service.dart';
+import 'package:food_lens/features/scan/presentation/providers/scan_provider.dart';
 
-class ScanScreen extends StatefulWidget {
+class ScanScreen extends ConsumerStatefulWidget {
   const ScanScreen({super.key});
 
   @override
-  State<ScanScreen> createState() => _ScanScreenState();
+  ConsumerState<ScanScreen> createState() => _ScanScreenState();
 }
 
-class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
+class _ScanScreenState extends ConsumerState<ScanScreen>
+    with TickerProviderStateMixin {
   late AnimationController _pageEnterController;
   late AnimationController _iconController;
   late AnimationController _scanLineController;
@@ -23,9 +25,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   late Animation<double> _scanLinePosition;
 
   File? _selectedImage;
-  String? _uploadedImageUrl;
   bool _isLoading = false;
-  bool _isUploading = false;
   String? _errorMessage;
 
   final ImagePicker _imagePicker = ImagePicker();
@@ -120,6 +120,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
           fontWeight: FontWeight.w600,
         ),
       ),
+      centerTitle: true,
       leading: IconButton(
         onPressed: _handleBack,
         icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
@@ -333,7 +334,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
               _buildActionButton(
                 icon: _isLoading ? Icons.hourglass_bottom : Icons.check_circle,
                 label: _isLoading ? 'Đang phân tích...' : 'Phân tích ảnh',
-                onPressed: (_isLoading || _isUploading) ? () {} : _analyzeImage,
+                onPressed: _isLoading ? () {} : _analyzeImage,
                 isPrimary: true,
               ),
               const SizedBox(height: 16),
@@ -341,7 +342,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
               _buildActionButton(
                 icon: Icons.refresh,
                 label: 'Chọn ảnh khác',
-                onPressed: (_isLoading || _isUploading) ? () {} : _resetImage,
+                onPressed: _isLoading ? () {} : _resetImage,
                 isPrimary: false,
               ),
               const SizedBox(height: 26),
@@ -402,21 +403,7 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   Future<void> _handleSelectedImage(File imageFile) async {
     setState(() {
       _selectedImage = imageFile;
-      _uploadedImageUrl = null;
-      _isUploading = true;
       _errorMessage = null;
-    });
-
-    final uploadedUrl = await CloudinaryService.uploadImage(imageFile);
-
-    if (!mounted) return;
-
-    setState(() {
-      _isUploading = false;
-      _uploadedImageUrl = uploadedUrl;
-      if (uploadedUrl == null) {
-        _errorMessage = 'Không thể tải ảnh lên Cloudinary. Vui lòng thử lại.';
-      }
     });
   }
 
@@ -426,20 +413,31 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
     setState(() => _isLoading = true);
 
     try {
-      if (_uploadedImageUrl == null) {
-        final uploadedUrl =
-            await CloudinaryService.uploadImage(_selectedImage!);
-        if (uploadedUrl == null) {
-          throw Exception('Upload Cloudinary thất bại');
-        }
-        _uploadedImageUrl = uploadedUrl;
-      }
+      final viewModel = ref.read(scanViewModelProvider.notifier);
+      await viewModel.analyzeImage(_selectedImage!);
+      final scanState = ref.read(scanViewModelProvider);
+      final result = scanState.result.valueOrNull;
 
-      // TODO: Wire với ScanViewModel để gọi API analyze thật bằng _uploadedImageUrl
-      await Future.delayed(const Duration(milliseconds: 700));
-
-      if (mounted) {
-        context.push('/scan/result', extra: _uploadedImageUrl);
+      if (mounted && result != null) {
+        // Upload thành công, chuyển tới ScanResultScreen với imageUrl từ Cloudinary
+        context.push(
+          '/scan/result',
+          extra: {
+            'imagePath': _selectedImage!.path,
+            'prediction': {
+              'food_name': result.foodName,
+              'food_name_vi': result.foodNameVi ?? result.foodName,
+              'calories_estimated': result.estimatedCalories,
+              'confidence': result.confidence,
+              'image_url': result.imageUrl ?? _selectedImage!.path,
+            },
+          },
+        );
+      } else if (mounted) {
+        setState(() {
+          _errorMessage =
+              scanState.errorMessage ?? 'Lỗi phân tích không xác định';
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -455,7 +453,6 @@ class _ScanScreenState extends State<ScanScreen> with TickerProviderStateMixin {
   void _resetImage() {
     setState(() {
       _selectedImage = null;
-      _uploadedImageUrl = null;
       _errorMessage = null;
     });
   }

@@ -82,6 +82,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 fontWeight: FontWeight.w600,
               ),
             ),
+            centerTitle: true,
           ),
           body: state.profile.when(
             data: (profile) {

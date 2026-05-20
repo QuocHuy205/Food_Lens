@@ -139,21 +139,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get goodEvening => 'Chào buổi tối';
 
   @override
-  String get focusNutritiousBreakfast => 'Tập trung: Bữa sáng dinh dưỡng';
-
-  @override
-  String get focusBalancedLunch => 'Tập trung: Bữa trưa cân bằng';
-
-  @override
-  String get focusLightDinner => 'Tập trung: Bữa tối nhẹ';
-
-  @override
   String hiName(Object name) {
     return 'Chào, $name!';
   }
-
-  @override
-  String get onTrack => 'Đang đúng tiến độ';
 
   @override
   String get dailyCalories => 'Calo hằng ngày';
@@ -188,19 +176,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get aiInsight => 'Gợi ý AI';
 
   @override
-  String get greatPaceTip =>
-      'Nhịp hôm nay rất tốt. Giữ bữa tối nhẹ và ưu tiên đạm.';
-
-  @override
   String get consumed => 'Đã nạp';
 
   @override
   String get remaining => 'Còn lại';
-
-  @override
-  String dailyGoalProgress(Object percent, Object remaining) {
-    return '$percent% mục tiêu ngày • còn $remaining kcal';
-  }
 
   @override
   String get kcal => 'kcal';

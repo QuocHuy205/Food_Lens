@@ -90,8 +90,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Đổi mật khẩu'),
         backgroundColor: AppColors.primary,
+        elevation: 0,
+        title: const Text(
+          'Đổi mật khẩu',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
         foregroundColor: Colors.white,
       ),
       body: SafeArea(

@@ -43,16 +43,12 @@
   "goodMorning": "Good morning",
   "goodAfternoon": "Good afternoon",
   "goodEvening": "Good evening",
-  "focusNutritiousBreakfast": "Focus: Nutritious breakfast",
-  "focusBalancedLunch": "Focus: Balanced lunch",
-  "focusLightDinner": "Focus: Light dinner",
   "hiName": "Hi, {name}!",
   "@hiName": {
     "placeholders": {
       "name": {}
     }
   },
-  "onTrack": "On track",
   "dailyCalories": "Daily Calories",
   "recentScans": "Recent Scans",
   "viewAll": "View All",
@@ -68,16 +64,8 @@
   },
   "todayCalories": "Today's Calories",
   "aiInsight": "AI insight",
-  "greatPaceTip": "Great pace today. Keep dinner light and protein-focused.",
   "consumed": "Consumed",
   "remaining": "Remaining",
-  "dailyGoalProgress": "{percent}% of daily goal • {remaining} kcal left",
-  "@dailyGoalProgress": {
-    "placeholders": {
-      "percent": {},
-      "remaining": {}
-    }
-  },
   "kcal": "kcal",
   "unknown": "Unknown",
   "protein": "Protein",

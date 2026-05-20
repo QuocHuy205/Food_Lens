@@ -31,46 +31,10 @@
               "client_type": 3
             },
             {
-              "client_id": "777496136617-pmal7v52ek8t98uvvgtm8ku8c9v62vn4.apps.googleusercontent.com",
+              "client_id": "777496136617-m6b6f2visor37n6lsf5u76qa23hndml9.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.yourname.foodlens.foodLens"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:777496136617:android:45f1ed99aede7120c452b8",
-        "android_client_info": {
-          "package_name": "com.yourname.foodlens.food_lens"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "777496136617-iuck9m6j90qnp0jc2u0a5a7q12ao7vss.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyA_qZXk_pmLgKUSCQgCHysLk7r29b3f3pc"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "777496136617-iuck9m6j90qnp0jc2u0a5a7q12ao7vss.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "777496136617-pmal7v52ek8t98uvvgtm8ku8c9v62vn4.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.yourname.foodlens.foodLens"
+                "bundle_id": "com.example.foodLens"
               }
             }
           ]

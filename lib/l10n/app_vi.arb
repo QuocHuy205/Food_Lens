@@ -43,16 +43,12 @@
   "goodMorning": "Chào buổi sáng",
   "goodAfternoon": "Chào buổi chiều",
   "goodEvening": "Chào buổi tối",
-  "focusNutritiousBreakfast": "Tập trung: Bữa sáng dinh dưỡng",
-  "focusBalancedLunch": "Tập trung: Bữa trưa cân bằng",
-  "focusLightDinner": "Tập trung: Bữa tối nhẹ",
   "hiName": "Chào, {name}!",
   "@hiName": {
     "placeholders": {
       "name": {}
     }
   },
-  "onTrack": "Đang đúng tiến độ",
   "dailyCalories": "Calo hằng ngày",
   "recentScans": "Bản quét gần đây",
   "viewAll": "Xem tất cả",
@@ -68,16 +64,8 @@
   },
   "todayCalories": "Calo hôm nay",
   "aiInsight": "Gợi ý AI",
-  "greatPaceTip": "Nhịp hôm nay rất tốt. Giữ bữa tối nhẹ và ưu tiên đạm.",
   "consumed": "Đã nạp",
   "remaining": "Còn lại",
-  "dailyGoalProgress": "{percent}% mục tiêu ngày • còn {remaining} kcal",
-  "@dailyGoalProgress": {
-    "placeholders": {
-      "percent": {},
-      "remaining": {}
-    }
-  },
   "kcal": "kcal",
   "unknown": "Không rõ",
   "protein": "Đạm",

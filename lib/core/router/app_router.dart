@@ -13,7 +13,7 @@ import 'package:food_lens/features/auth/presentation/screens/forgot_password_scr
 import 'package:food_lens/features/home/presentation/screens/home_screen.dart';
 import 'package:food_lens/features/scan/presentation/screens/scan_screen.dart';
 import 'package:food_lens/features/scan/presentation/screens/scan_result_screen.dart';
-import 'package:food_lens/features/nutrition/presentation/screens/stats_screen.dart';
+import 'package:food_lens/features/stats/presentation/screens/stats_screen.dart';
 import 'package:food_lens/features/profile/presentation/screens/profile_screen.dart';
 import 'package:food_lens/features/profile/presentation/screens/edit_profile_screen.dart';
 import 'package:food_lens/features/profile/presentation/screens/settings_screen.dart';
@@ -107,6 +107,17 @@ NoTransitionPage<T> _buildNoTransitionPage<T>({
   );
 }
 
+Widget _buildScanResultScreen(Object? extra) {
+  if (extra is Map<String, dynamic>) {
+    return ScanResultScreen(
+      imagePath: extra['imagePath'] as String? ?? extra['imageUrl'] as String?,
+      prediction: extra['prediction'] as Map<String, dynamic>?,
+    );
+  }
+
+  return ScanResultScreen(imagePath: extra as String?);
+}
+
 final appRouterProvider = Provider((ref) {
   final firebaseAuth = FirebaseAuth.instance;
   final authNotifier = AuthRouterNotifier(firebaseAuth);
@@ -171,7 +182,7 @@ final appRouterProvider = Provider((ref) {
         pageBuilder: (context, state) => _buildSmoothPage(
           context: context,
           state: state,
-          child: ScanResultScreen(imageUrl: state.extra as String?),
+          child: _buildScanResultScreen(state.extra),
         ),
       ),
       GoRoute(

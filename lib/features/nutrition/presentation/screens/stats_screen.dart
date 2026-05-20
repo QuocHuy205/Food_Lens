@@ -593,41 +593,6 @@ class _StatsScreenState extends State<StatsScreen>
     );
   }
 
-  Widget _buildMacroInfo(String name, String value, Color color) {
-    final textSecondary =
-        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72);
-
-    return Column(
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: TextStyle(
-            color: color,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          name,
-          style: TextStyle(
-            color: textSecondary,
-            fontSize: 10,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildBottomNav(BuildContext context) {
     return AppBottomNav(
       currentIndex: 3,

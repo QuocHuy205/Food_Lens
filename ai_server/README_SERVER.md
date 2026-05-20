@@ -1,383 +1,209 @@
-# 🔧 AI SERVER SETUP — Food Lens
+﻿# Food AI Server
 
----
+FastAPI backend cho Food Lens. Server nhận ảnh từ Flutter, chạy TensorFlow inference, và trả về món ăn cùng calories/nutrition. Luồng hiện tại có 2 cách gọi chính:
 
-## 📁 Cấu Trúc Folder
+- `POST /predict`: nhận ảnh multipart trực tiếp
+- `POST /analyze`: nhận `image_url` từ Cloudinary, server tải ảnh về rồi phân tích
 
-```
-food_lens/ai_server/
-├── main.py                    ← FastAPI app (entry point)
-├── config.py                  ← Config (paths, model settings)
-├── schemas.py                 ← Pydantic models
-├── inference.py               ← Model inference logic
-├── nutrition_db.py            ← Food nutrition database
-├── train.py                   ← Training pipeline
-│
-├── requirements.txt           ← Python dependencies
-├── Dockerfile                 ← Docker image
-├── docker-compose.yml         ← Local dev
-├── .dockerignore
-├── .env.example               ← Environment template
-│
-├── models/                    ← Saved models (git-lfs)
-│   ├── model_v1.h5           ← Full model (150 MB)
-│   ├── model_v1.tflite       ← Mobile model (15-20 MB)
-│   ├── classes.json          ← Class names
-│   └── nutrition_db.json     ← Nutrition DB
-│
-├── data/                      ← Training dataset
-│   ├── vietnamese_food_101/
-│   │   ├── train/
-│   │   │   ├── pho/          ← 50-100 ảnh
-│   │   │   ├── banh_mi/
-│   │   │   └── ...
-│   │   └── val/
-│   └── raw/                   ← Original data
-│
-└── logs/                      ← Server logs
+## Cấu trúc hiện tại
+
+```text
+ai_server/
+├── main.py
+├── config.py
+├── inference.py
+├── schemas.py
+├── nutrition_db.py
+├── train.py
+├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
+├── .env.example
+├── data/
+│   └── images/
+├── models/
+│   ├── model_v1.h5
+│   ├── model_v1.tflite
+│   └── classes.json
+└── logs/
 ```
 
----
+## File chính
 
-## 🚀 QUY TRÌNH SETUP
+- `main.py`: FastAPI app, CORS, startup, `/health`, `/predict`, `/analyze`
+- `inference.py`: load model, preprocess ảnh, infer, tính nutrition
+- `config.py`: đường dẫn, tham số model, timeout, host/port
+- `schemas.py`: Pydantic request/response models
+- `nutrition_db.py`: database dinh dưỡng
+- `train.py`: pipeline train model từ `data/images/`
 
-### **STEP 1: Tạo Virtual Environment**
+## Chuẩn bị môi trường
+
+### 1. Tạo venv
 
 ```bash
-# Đặt tại thư mục ai_server
 cd ai_server
-
-# Windows
-python -m venv venv
-venv\Scripts\activate
-
-# Linux/Mac
-python3 -m venv venv
-source venv/bin/activate
+python -m venv .venv311
 ```
 
-**Kết quả:** `(venv) C:\...\ai_server>`
-
----
-
-### **STEP 2: Cài Dependencies**
+### 2. Kích hoạt venv trên Windows
 
 ```bash
-pip install -r requirements.txt
+.\.venv311\Scripts\activate
 ```
 
-**Thời gian:** 5-10 phút (TensorFlow nặng)
-
----
-
-### **STEP 3: Setup .env**
+### 3. Cài dependencies
 
 ```bash
-# Copy template
-cp .env.example .env
-
-# Edit .env
-# SERVER_HOST=0.0.0.0
-# SERVER_PORT=8000
-# DEBUG=True
+python -m pip install -r requirements.txt
 ```
 
----
+### 4. Tạo file `.env`
 
-### **STEP 4: Chuẩn Bị Dataset (Nếu train)**
+Copy từ `.env.example` rồi chỉnh các giá trị cần thiết, ví dụ:
 
-```
-data/vietnamese_food_101/
-├── train/
-│   ├── pho/              ← 100 ảnh phở
-│   ├── banh_mi/          ← 100 ảnh bánh mì
-│   ├── com_tam/
-│   ├── bun_bo/
-│   └── ... (50 loại = 5000 ảnh)
-└── val/
-    ├── pho/              ← 20 ảnh phở
-    ├── banh_mi/
-    └── ...
+```env
+SERVER_HOST=0.0.0.0
+SERVER_PORT=8000
+DEBUG=False
+AI_API_BASE_URL=http://10.0.2.2:8000
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_UPLOAD_PRESET=your-upload-preset
 ```
 
-**Cấu trúc từng folder:**
+## Chạy server
 
-```
-data/vietnamese_food_101/train/pho/
-├── pho_001.jpg
-├── pho_002.jpg
-├── pho_hanoi_001.jpg
-└── ... (100+ ảnh)
-```
-
----
-
-### **STEP 5: Train Model (LẦN ĐẦU)**
+### Cách khuyến nghị trên Windows
 
 ```bash
-python train.py
+cd d:\CaloriesAI\food_lens\ai_server
+.\.venv311\Scripts\uvicorn.exe main:app --app-dir d:\CaloriesAI\food_lens\ai_server --host 0.0.0.0 --port 8000
 ```
 
-**Output:**
-
-```
-Loading data from data/vietnamese_food_101...
-✅ Data loaded: 4500 train, 1000 val
-Classes: {'pho': 0, 'banh_mi': 1, ...}
-Building model with MobileNetV2...
-Starting training...
-Epoch 1/50
-320/320 [==============================] - 45s - loss: 2.1 - accuracy: 0.45
-...
-Epoch 50/50
-✅ Training complete!
-Saving model to models/model_v1.h5
-✅ Model saved!
-Converting to TFLite: models/model_v1.tflite
-✅ TFLite model saved: 18.5 MB
-✅ Classes saved: models/classes.json
-✅ All done!
-```
-
-**Output Files:**
-
-- ✅ `models/model_v1.h5` (80-150 MB)
-- ✅ `models/model_v1.tflite` (15-20 MB)
-- ✅ `models/classes.json` (tên class)
-
----
-
-### **STEP 6: Chạy Server Local**
+### Cách khác
 
 ```bash
-# Run server
 python main.py
-
-# Hoặc dùng uvicorn trực tiếp
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-**Output:**
+## API đang dùng
 
-```
-INFO:     Uvicorn running on http://0.0.0.0:8000
-INFO:     Application startup complete
-✅ Model loaded: True
-🟢 Server starting...
-```
-
-**Truy cập:**
-
-- 🌐 http://localhost:8000/health
-- 📚 http://localhost:8000/docs (Swagger UI)
-- 🎯 http://localhost:8000/analyze (POST)
-
----
-
-## 🧪 TEST API LOCAL
-
-### **Test 1: Health Check**
+### Health check
 
 ```bash
-curl -X GET http://localhost:8000/health
+GET /health
 ```
 
-**Response:**
+### Predict trực tiếp bằng file ảnh
+
+```bash
+POST /predict
+```
+
+Form-data:
+
+- key: `image`
+- value: file ảnh
+
+### Analyze từ Cloudinary URL
+
+```bash
+POST /analyze
+```
+
+Body JSON:
 
 ```json
 {
-  "status": "healthy",
-  "message": "Food AI server is running",
-  "timestamp": "2026-04-16T10:30:00",
-  "model_loaded": true
+  "image_url": "https://res.cloudinary.com/.../image.jpg"
 }
 ```
 
----
+## Kết quả trả về
 
-### **Test 2: Analyze Food (Mock)**
-
-```bash
-curl -X POST http://localhost:8000/analyze \
-  -H "Content-Type: application/json" \
-  -d '{
-    "image_url": "https://res.cloudinary.com/demo/image/upload/pho.jpg",
-    "user_id": "user123"
-  }'
-```
-
-**Response:**
+Cả hai endpoint đều trả về object dạng:
 
 ```json
 {
   "success": true,
   "data": {
-    "food_name": "pho",
-    "food_name_vi": "Phở bò",
-    "confidence": 0.92,
-    "calories_estimated": 350.0,
-    "portion_grams": 400,
+    "food_name": "banh_beo",
+    "food_name_vi": "Món ăn hỗn hợp",
+    "confidence": 0.678223,
+    "calories_estimated": 360.0,
+    "portion_grams": 300,
     "nutrition": {
-      "protein_g": 28.0,
-      "carbs_g": 36.0,
-      "fat_g": 6.0,
-      "fiber_g": 2.0
+      "protein_g": 18.0,
+      "carbs_g": 45.0,
+      "fat_g": 12.0,
+      "fiber_g": 3.0
     },
-    "top_predictions": [...],
-    "inference_time_ms": 234.5,
-    "response_time_ms": 1245.3
-  }
+    "top_predictions": [],
+    "inference_time_ms": 123.01,
+    "response_time_ms": 123.03,
+    "model_version": "food_model.h5",
+    "input_size": 224
+  },
+  "error": null
 }
 ```
 
----
+## Train model
 
-### **Test 3: Swagger UI**
-
-Truy cập: http://localhost:8000/docs
-
-- ✅ Try it out
-- ✅ Execute request
-- ✅ Xem response
-
----
-
-## 🐳 DEPLOY VỚI DOCKER
-
-### **Local Docker**
+Dataset train nằm ở `data/images/`, mỗi class là một folder riêng.
 
 ```bash
-# Build image
+cd d:\CaloriesAI\food_lens\ai_server
+$env:EPOCHS='15'
+.\.venv311\Scripts\python.exe train.py
+```
+
+Kết quả train sẽ lưu vào:
+
+- `models/model_v1.h5`
+- `models/model_v1.tflite`
+- `models/classes.json`
+
+`train.py` đã được tối ưu cho GPU và mixed precision, nên nếu máy có NVIDIA GPU phù hợp thì train sẽ nhanh hơn.
+
+## Docker
+
+### Build
+
+```bash
 docker build -t food-ai-server .
-
-# Run container
-docker run \
-  -p 8000:8000 \
-  -v $(pwd)/models:/app/models \
-  -e DEBUG=True \
-  food-ai-server
 ```
 
----
-
-### **Docker Compose (Recommended)**
+### Run
 
 ```bash
-# Start
-docker-compose up -d
-
-# Logs
-docker-compose logs -f
-
-# Stop
-docker-compose down
+docker run -p 8000:8000 --env-file .env food-ai-server
 ```
 
-**Output:**
-
-```
-Creating food_lens_ai_server ... done
-food_lens_ai_server | INFO:     Uvicorn running on http://0.0.0.0:8000
-```
-
----
-
-## ☁️ DEPLOY LÊN CLOUD (Render.com)
-
-### **Step 1: Push Docker Image**
+### Docker Compose
 
 ```bash
-# Build docker image
-docker build -t food-ai-server .
-
-# Tag image
-docker tag food-ai-server username/food-ai-server:latest
-
-# Push to Docker Hub
-docker push username/food-ai-server:latest
+docker-compose up --build
 ```
 
----
+## Flutter integration
 
-### **Step 2: Deploy to Render**
+Flutter app đang dùng 2 luồng:
 
-1. Đăng nhập: https://render.com
-2. New → Web Service
-3. Docker (Container Image Registry)
-4. Image URL: `username/food-ai-server:latest`
-5. Port: 8000
-6. Deploy
+- upload file ảnh rồi gọi `/predict`
+- upload Cloudinary rồi gọi `/analyze`
 
-**Result:** https://food-ai-server.onrender.com
+Cấu hình URL server nằm trong `.env` của app qua `AI_API_BASE_URL` hoặc `AI_SERVER_URL`.
 
----
+## Troubleshooting nhanh
 
-### **Step 3: Test Cloud URL**
+- Nếu server không lên, kiểm tra model trong `models/model_v1.h5` và `models/classes.json`
+- Nếu `/analyze` lỗi, kiểm tra `CLOUDINARY_CLOUD_NAME` và `CLOUDINARY_UPLOAD_PRESET`
+- Nếu Flutter chạy trên emulator Android, dùng `http://10.0.2.2:8000`
+- Nếu muốn xem docs API, mở `http://localhost:8000/docs`
 
-```bash
-curl -X GET https://food-ai-server.onrender.com/health
+## Ghi chú
 
-# Update Flutter app:
-AI_SERVER_URL=https://food-ai-server.onrender.com
-```
-
----
-
-## 📊 MONITORING
-
-### **Server Logs**
-
-```bash
-# Real-time logs
-docker-compose logs -f
-
-# Save logs
-docker-compose logs > server.log
-```
-
----
-
-### **Performance**
-
-```bash
-# CPU/Memory usage
-docker stats food_lens_ai_server
-
-# Model metrics (Swagger)
-http://localhost:8000/docs
-```
-
----
-
-## 🐛 TROUBLESHOOTING
-
-| Vấn Đề                  | Nguyên Nhân         | Fix                                   |
-| ----------------------- | ------------------- | ------------------------------------- |
-| **Model not found**     | Không train model   | Chạy `python train.py`                |
-| **Import error**        | Dependencies thiếu  | `pip install -r requirements.txt`     |
-| **CORS error**          | Flutter gọi sai URL | Check `AI_SERVER_URL` in app          |
-| **Timeout**             | Server chậm         | Optimize model được transfer learning |
-| **Port already in use** | Port 8000 bị cấp    | `lsof -i :8000` → kill process        |
-
----
-
-## 🎯 NEXT STEPS
-
-1. **Train model thật** (1-2 tuần):
-   - Thu thập 5000-10000 ảnh 50 loại thực phẩm
-   - Chạy `python train.py`
-   - Optimize accuracy → 85-90%
-
-2. **Deploy to production**:
-   - Push Docker to Docker Hub
-   - Deploy to Render/Railway
-   - Monitor performance
-
-3. **Connect Flutter app**:
-   - Update `AI_SERVER_URL`
-   - Test end-to-end
-   - Add error handling
-
----
-
-**Xong! Server đã sẵn sàng! 🚀**
+- Không cần sửa logic inference nếu server đang chạy ổn.
+- Ưu tiên giữ `main.py`, `inference.py`, `config.py`, `schemas.py`, `nutrition_db.py`, `train.py`, `models/`, `data/`.
+- Các file test cũ và cache chỉ nên giữ nếu còn thật sự cần cho debugging.

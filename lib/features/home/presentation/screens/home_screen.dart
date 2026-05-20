@@ -2,13 +2,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:async';
 import 'package:intl/intl.dart';
 import 'package:food_lens/l10n/app_localizations.dart';
 import 'package:food_lens/core/theme/app_colors.dart';
 import 'package:food_lens/core/widgets/app_bottom_nav.dart';
+import 'package:food_lens/features/history/presentation/widgets/history_list_item.dart';
 
 import '../../../profile/domain/entities/user_profile.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
+import '../../../history/presentation/providers/history_provider.dart';
+import '../../../scan/domain/entities/scan_history.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -34,6 +38,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid != null) {
         ref.read(profileViewModelProvider.notifier).loadProfile(uid);
+        ref.read(historyViewModelProvider.notifier).loadHistory(uid);
       }
     });
   }
@@ -78,7 +83,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final profileState = ref.watch(profileViewModelProvider);
+    final historyState = ref.watch(historyViewModelProvider);
     final profile = profileState.profile.valueOrNull;
+    final scans = historyState.history.valueOrNull ?? const <ScanHistory>[];
 
     return SlideTransition(
       position: _slideAnimation,
@@ -97,10 +104,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 _buildGreetingCard(profile),
                 const SizedBox(height: 20),
                 // Calorie Summary Card
-                _buildCalorieSummaryCard(),
+                _buildCalorieSummaryCard(profile, scans),
                 const SizedBox(height: 20),
                 // Recent Scans
-                _buildRecentScans(),
+                _buildRecentScans(scans),
                 const SizedBox(height: 24),
               ],
             ),
@@ -140,7 +147,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           fontWeight: FontWeight.w600,
         ),
       ),
-      centerTitle: false,
+      centerTitle: true,
       actions: [
         Padding(
           padding: const EdgeInsets.all(12),
@@ -184,144 +191,188 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textPrimary = _onSurface(context);
     final textSecondary = _mutedText(context);
-    final displayName = _resolveDisplayName(profile);
-    final formattedDate = DateFormat('d MMMM y').format(DateTime.now());
-    final hour = DateTime.now().hour;
-    final salutation = hour < 12
-        ? l10n.goodMorning
-        : hour < 18
-            ? l10n.goodAfternoon
-            : l10n.goodEvening;
-    final focusLabel = hour < 11
-        ? l10n.focusNutritiousBreakfast
-        : hour < 16
-            ? l10n.focusBalancedLunch
-            : l10n.focusLightDinner;
 
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? const [Color(0xFF243A2D), Color(0xFF1E3226)]
-              : const [Color(0xFFEDF8EF), Color(0xFFD9F0DD)],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark ? _border(context) : const Color(0xFFCDE5D0),
-          width: 1.2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1B5E20).withValues(alpha: 0.10),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
+    return StreamBuilder<DateTime>(
+      stream: Stream.periodic(
+        const Duration(seconds: 1),
+        (_) => DateTime.now(),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      initialData: DateTime.now(),
+      builder: (context, snapshot) {
+        final now = snapshot.data ?? DateTime.now();
+        final localeName = Localizations.localeOf(context).toLanguageTag();
+        final salutation = _buildSalutation(l10n, now.hour);
+        final dateText = DateFormat('EEEE, d MMMM y', localeName).format(now);
+        final timeText = DateFormat('HH:mm:ss', localeName).format(now);
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? const [Color(0xFF22372B), Color(0xFF17241D)]
+                  : const [Color(0xFFF6FBF4), Color(0xFFE4F3E7)],
+            ),
+            borderRadius: BorderRadius.circular(26),
+            border: Border.all(
+              color: isDark ? _border(context) : const Color(0xFFD7E8DA),
+              width: 1.1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1B5E20).withValues(alpha: 0.08),
+                blurRadius: 22,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? AppColors.primary.withValues(alpha: 0.20)
-                            : const Color(0xFF2E7D32).withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        '$salutation, $displayName',
-                        style: TextStyle(
-                          color:
-                              isDark ? Colors.white : const Color(0xFF1F5F25),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
                     Text(
-                      l10n.hiName(displayName),
+                      salutation,
                       style: TextStyle(
                         color: textPrimary,
                         fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.2,
+                        height: 1.08,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                     Text(
-                      formattedDate,
+                      dateText,
                       style: TextStyle(
                         color: textSecondary,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.06)
+                                : Colors.white.withValues(alpha: 0.75),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.07)
+                                  : const Color(0xFFD9E8DB),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? const Color(0xFF9CE3A6)
+                                      : const Color(0xFF2E7D32),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                timeText,
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF244D28),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
+                ),
+              ),
+              const SizedBox(width: 14),
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.07)
+                      : Colors.white.withValues(alpha: 0.85),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : const Color(0xFFD8E8DB),
+                  ),
+                ),
+                child: Icon(
+                  Icons.wb_sunny_outlined,
+                  color: isDark ? Colors.white : const Color(0xFF2E7D32),
+                  size: 28,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.primary.withValues(alpha: 0.12)
-                  : Colors.white.withValues(alpha: 0.72),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isDark
-                    ? AppColors.primary.withValues(alpha: 0.30)
-                    : const Color(0xFFD4E8D7),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.auto_awesome,
-                  color: isDark ? Colors.white : const Color(0xFF2E7D32),
-                  size: 18,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    focusLabel,
-                    style: TextStyle(
-                      color: isDark ? Colors.white : const Color(0xFF245D2A),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                Text(
-                  l10n.onTrack,
-                  style: TextStyle(
-                    color: isDark ? Colors.white : const Color(0xFF2E7D32),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
+  }
+
+  String _buildSalutation(AppLocalizations l10n, int hour) {
+    if (hour < 12) return l10n.goodMorning;
+    if (hour < 18) return l10n.goodAfternoon;
+    return l10n.goodEvening;
+  }
+
+  int _resolveDailyCalorieTarget(UserProfile? profile) {
+    final savedTarget = profile?.dailyCalorieTarget;
+    if (savedTarget != null && savedTarget > 0) {
+      return savedTarget.round();
+    }
+
+    if (profile == null) {
+      return 0;
+    }
+
+    return _calculateTdeeFromProfile(profile);
+  }
+
+  int _calculateTdeeFromProfile(UserProfile profile) {
+    final isMale = profile.gender.toLowerCase() == 'male';
+    final activityMultiplier = switch (profile.activityLevel.toLowerCase()) {
+      'sedentary' => 1.2,
+      'light' => 1.375,
+      'moderate' => 1.55,
+      'active' => 1.725,
+      'very active' || 'very_active' => 1.9,
+      _ => 1.375,
+    };
+
+    final bmr = isMale
+        ? 10 * profile.weight + 6.25 * profile.height - 5 * profile.age + 5
+        : 10 * profile.weight + 6.25 * profile.height - 5 * profile.age - 161;
+
+    return (bmr * activityMultiplier).round();
   }
 
   String _resolveDisplayName(UserProfile? profile) {
@@ -344,12 +395,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return 'User';
   }
 
-  Widget _buildCalorieSummaryCard() {
+  Widget _buildCalorieSummaryCard(
+      UserProfile? profile, List<ScanHistory> scans) {
     final l10n = AppLocalizations.of(context)!;
-    const consumedCalories = 1450;
-    const goalCalories = 2200;
-    const progress = consumedCalories / goalCalories;
-    final remainingCalories = goalCalories - consumedCalories;
+    final consumedCalories = _calculateTodayCalories(scans);
+    final goalCalories = _resolveDailyCalorieTarget(profile);
+    final consumedCaloriesText = _formatCalories(consumedCalories);
+    final hasGoalCalories = goalCalories > 0;
+    final progress =
+        hasGoalCalories ? (consumedCalories / goalCalories).clamp(0, 1) : 0.0;
+    final remainingCalories = hasGoalCalories
+        ? (goalCalories - consumedCalories).clamp(0, double.infinity).round()
+        : 0;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -483,7 +540,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                               ),
                             ),
                             Text(
-                              '/ $goalCalories ${l10n.kcal}',
+                              hasGoalCalories
+                                  ? '/ $goalCalories ${l10n.kcal}'
+                                  : l10n.dailyCalories,
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.84),
                                 fontSize: 12,
@@ -503,7 +562,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   Expanded(
                     child: _buildCalorieStatChip(
                       label: l10n.consumed,
-                      value: '$consumedCalories ${l10n.kcal}',
+                      value: '$consumedCaloriesText ${l10n.kcal}',
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -517,57 +576,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   Expanded(
                     child: _buildCalorieStatChip(
                       label: l10n.goal,
-                      value: '$goalCalories ${l10n.kcal}',
+                      value: hasGoalCalories
+                          ? '$goalCalories ${l10n.kcal}'
+                          : '-- ${l10n.kcal}',
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 12),
-              AnimatedBuilder(
-                animation: _progressController,
-                builder: (context, child) {
-                  final percentage =
-                      (progress * _progressController.value * 100)
-                          .clamp(0, 100)
-                          .round();
-
-                  return Text(
-                    l10n.dailyGoalProgress(percentage, remainingCalories),
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.88),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.greatPaceTip,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.74),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.14),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildMacroItem(l10n.protein, '65g', Colors.white),
-                    _buildMacroItem(l10n.carbs, '180g', Colors.white),
-                    _buildMacroItem(l10n.fat, '45g', Colors.white),
-                  ],
-                ),
               ),
             ],
           ),
@@ -618,37 +632,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  Widget _buildMacroItem(String label, String value, Color color) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            color: color,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: TextStyle(
-            color: color.withValues(alpha: 0.7),
-            fontSize: 11,
-          ),
-        ),
-      ],
-    );
+  double _calculateTodayCalories(List<ScanHistory> scans) {
+    final now = DateTime.now();
+    return scans
+        .where((scan) =>
+            scan.createdAt.year == now.year &&
+            scan.createdAt.month == now.month &&
+            scan.createdAt.day == now.day)
+        .fold<double>(0.0, (sum, scan) => sum + scan.calories);
   }
 
-  Widget _buildRecentScans() {
+  Widget _buildRecentScans(List<ScanHistory> scans) {
     final textPrimary = _onSurface(context);
     final l10n = AppLocalizations.of(context)!;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -674,108 +674,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ],
         ),
         const SizedBox(height: 12),
-        // Scan Items
-        _buildScanItem(
-          'Fresh Tuna Poke Bowl',
-          '340 cal',
-          '${l10n.lunch} • 12:30 PM',
-          Icons.ramen_dining,
-        ),
-        const SizedBox(height: 10),
-        _buildScanItem(
-          'Berry Almond Oatmeal',
-          '380 cal',
-          '${l10n.breakfast} • 8:15 AM',
-          Icons.breakfast_dining,
-        ),
-        const SizedBox(height: 10),
-        _buildScanItem(
-          'Detox Green Juice',
-          '120 cal',
-          '${l10n.snack} • 3:45 PM',
-          Icons.local_drink,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildScanItem(
-    String title,
-    String calories,
-    String time,
-    IconData icon,
-  ) {
-    final textPrimary = _onSurface(context);
-    final textSecondary = _mutedText(context);
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: _surface(context),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _border(context), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
+        if (scans.isEmpty)
           Container(
-            width: 54,
-            height: 54,
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.primary.withValues(alpha: 0.22),
-                  AppColors.primary.withValues(alpha: 0.10),
-                ],
+              color: _surface(context),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: _border(context), width: 1),
+            ),
+            child: Text(
+              _localizedMessage(
+                vi: 'Chưa có lịch sử quét',
+                en: 'No scan history yet',
               ),
-              borderRadius: BorderRadius.circular(14),
+              style: TextStyle(
+                color: _mutedText(context),
+                fontSize: 13,
+              ),
             ),
-            child: Icon(icon, size: 26, color: AppColors.primary),
-          ),
-          const SizedBox(width: 12),
-          // Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  time,
-                  style: TextStyle(
-                    color: textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Calories
-          Text(
-            calories,
-            style: const TextStyle(
-              color: AppColors.primary,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
+          )
+        else
+          ...scans.take(3).map((scan) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: HistoryListItem(
+                imageUrl: scan.imageUrl,
+                name: scan.foodName,
+                time: DateFormat('HH:mm').format(scan.createdAt),
+                calories: scan.calories.round(),
+                type: '',
+              ),
+            );
+          }),
+      ],
     );
   }
 
@@ -796,4 +727,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       unselectedItemColor: _mutedText(context),
     );
   }
+
+  String _localizedMessage({required String vi, required String en}) {
+    return Localizations.localeOf(context).languageCode == 'vi' ? vi : en;
+  }
+
+  String _formatCalories(double calories) => calories.round().toString();
 }

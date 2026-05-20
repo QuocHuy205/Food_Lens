@@ -69,6 +69,9 @@ dev_dependencies:
   # 🧪 TESTING
   mockito: ^5.4.0
 
+  # 🎨 APP ICON GENERATOR
+  flutter_launcher_icons: ^0.14.1
+
 flutter:
   generate: true
   uses-material-design: true
@@ -82,3 +85,21 @@ flutter:
   #   - family: Poppins
   #     fonts:
   #       - asset: assets/fonts/Poppins-Regular.ttf
+
+# 🎨 APP ICON CONFIGURATION
+flutter_launcher_icons:
+  image_path: assets/images/app_icon.png
+  image_path_android: assets/images/app_icon.png
+  image_path_ios: assets/images/app_icon.png
+  android:
+    notification_icon: notification_icon
+    notification_icon_color: "#00ff00"
+    generate: true
+  ios:
+    generate: true
+  web:
+    generate: false
+  windows:
+    generate: false
+  macos:
+    generate: false

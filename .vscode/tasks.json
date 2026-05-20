@@ -1,0 +1,294 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Install tf-keras",
+			"type": "shell",
+			"command": "d:\\CaloriesAI\\food_lens\\ai_server\\.venv311\\Scripts\\pip.exe",
+			"args": [
+				"install",
+				"tf-keras==2.15.1"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Start AI server",
+			"type": "shell",
+			"command": "d:\\CaloriesAI\\food_lens\\ai_server\\.venv311\\Scripts\\uvicorn.exe",
+			"args": [
+				"main:app",
+				"--host",
+				"0.0.0.0",
+				"--port",
+				"8000"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Start AI server",
+			"type": "shell",
+			"command": "Set-Location d:\\CaloriesAI\\food_lens\\ai_server; d:\\CaloriesAI\\food_lens\\ai_server\\.venv311\\Scripts\\uvicorn.exe",
+			"args": [
+				"main:app",
+				"--host",
+				"0.0.0.0",
+				"--port",
+				"8000"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Inspect H5 config",
+			"type": "shell",
+			"command": "d:\\CaloriesAI\\food_lens\\ai_server\\.venv311\\Scripts\\python.exe",
+			"args": [
+				"-c",
+				"import h5py; f=h5py.File(r'd:\\\\CaloriesAI\\\\food_lens\\\\ai_server\\\\food_model.h5','r'); print(list(f.keys())); mc=f.attrs.get('model_config'); s=mc.decode('utf-8') if isinstance(mc,(bytes,bytearray)) else mc; print(s[:1200])"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Inspect H5 config script",
+			"type": "shell",
+			"command": "d:\\CaloriesAI\\food_lens\\ai_server\\.venv311\\Scripts\\python.exe",
+			"args": [
+				"d:\\CaloriesAI\\food_lens\\ai_server\\inspect_h5.py"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Patch H5 config",
+			"type": "shell",
+			"command": "d:\\CaloriesAI\\food_lens\\ai_server\\.venv311\\Scripts\\python.exe",
+			"args": [
+				"d:\\CaloriesAI\\food_lens\\ai_server\\patch_h5_model_config.py"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Inspect patched H5 config",
+			"type": "shell",
+			"command": "d:\\CaloriesAI\\food_lens\\ai_server\\.venv311\\Scripts\\python.exe",
+			"args": [
+				"d:\\CaloriesAI\\food_lens\\ai_server\\inspect_patched_h5.py"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Inspect H5 tail",
+			"type": "shell",
+			"command": "d:\\CaloriesAI\\food_lens\\ai_server\\.venv311\\Scripts\\python.exe",
+			"args": [
+				"d:\\CaloriesAI\\food_lens\\ai_server\\inspect_h5_tail.py"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Inspect head tail details",
+			"type": "shell",
+			"command": "d:\\CaloriesAI\\food_lens\\ai_server\\.venv311\\Scripts\\python.exe",
+			"args": [
+				"d:\\CaloriesAI\\food_lens\\ai_server\\inspect_h5_headtail.py"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Check port 8000",
+			"type": "shell",
+			"command": "netstat",
+			"args": [
+				"-ano",
+				"|",
+				"findstr",
+				":8000"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Stop port 8000 owner",
+			"type": "shell",
+			"command": "taskkill",
+			"args": [
+				"/PID",
+				"19676",
+				"/F"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Health check AI server",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-Command",
+				"Invoke-RestMethod -Uri 'http://127.0.0.1:8000/health' -Method Get | ConvertTo-Json -Compress"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Benchmark predict",
+			"type": "shell",
+			"command": "d:\\CaloriesAI\\food_lens\\ai_server\\.venv311\\Scripts\\python.exe",
+			"args": [
+				"d:\\CaloriesAI\\food_lens\\ai_server\\bench_predict.py"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Get machine IP",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-Command",
+				"ipconfig /all | Select-String 'IPv4 Address' | Select-Object -First 1"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Check port 8000",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-Command",
+				"netstat -ano | Select-String ':8000.*LISTENING' | Select-Object -First 1"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Get all IP config",
+			"type": "shell",
+			"command": "ipconfig",
+			"args": [
+				"/all"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Check firewall status",
+			"type": "shell",
+			"command": "netsh",
+			"args": [
+				"firewall",
+				"show",
+				"allprofiles"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Check firewall status v2",
+			"type": "shell",
+			"command": "netsh",
+			"args": [
+				"advfirewall",
+				"show",
+				"allprofiles"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Allow port 8000 in firewall",
+			"type": "shell",
+			"command": "netsh",
+			"args": [
+				"advfirewall",
+				"firewall",
+				"add",
+				"rule",
+				"name=Allow_AI_Server",
+				"dir=in",
+				"action=allow",
+				"protocol=tcp",
+				"localport=8000",
+				"profile=any"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "List processes",
+			"type": "shell",
+			"command": "tasklist",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Check port 8000",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"Get-NetTCPConnection",
+				"-LocalPort",
+				"8000",
+				"-ErrorAction",
+				"SilentlyContinue"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Kill process 26544",
+			"type": "shell",
+			"command": "taskkill",
+			"args": [
+				"26544",
+				"/F"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Kill process 26544 correctly",
+			"type": "shell",
+			"command": "taskkill",
+			"args": [
+				"/PID",
+				"26544",
+				"/F"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

@@ -7,7 +7,9 @@ pydantic-settings==2.1.0
 
 # ML & Data Science
 tensorflow==2.15.0
+tf-keras==2.15.1
 numpy==1.24.3
+scipy==1.11.4
 pillow==10.1.0
 opencv-python==4.8.1.78
 
