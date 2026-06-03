@@ -313,8 +313,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
     return AppBottomNav(
       currentIndex: 2,
       surfaceColor: Theme.of(context).colorScheme.surface,
-      borderColor:
-          Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.16),
       unselectedItemColor:
           Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72),
     );

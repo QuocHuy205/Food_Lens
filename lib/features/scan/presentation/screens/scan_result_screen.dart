@@ -761,7 +761,6 @@ class _ScanResultScreenState extends ConsumerState<ScanResultScreen>
     return AppBottomNav(
       currentIndex: 1,
       surfaceColor: _surface(context),
-      borderColor: _border(context),
       unselectedItemColor: _mutedText(context),
     );
   }

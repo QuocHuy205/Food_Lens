@@ -198,7 +198,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           bottomNavigationBar: AppBottomNav(
             currentIndex: 4,
             surfaceColor: _surface(context),
-            borderColor: _border(context),
             unselectedItemColor: _mutedText(context),
           ),
         ),

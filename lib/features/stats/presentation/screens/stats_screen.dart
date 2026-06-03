@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:food_lens/l10n/app_localizations.dart';
 import 'package:food_lens/core/theme/app_colors.dart';
+import 'package:food_lens/core/theme/locale_provider.dart';
 import 'package:food_lens/core/widgets/app_bottom_nav.dart';
 import '../providers/stats_provider.dart';
 import '../viewmodels/stats_viewmodel.dart';
@@ -28,7 +29,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
       _pageEnterController.forward();
       final userId = FirebaseAuth.instance.currentUser?.uid;
       if (userId != null) {
-        ref.read(statsViewModelProvider.notifier).loadStats(userId, '7d');
+        ref.read(statsViewModelProvider.notifier).loadStats(
+            userId, '7d', Localizations.localeOf(context).languageCode);
       }
     });
   }
@@ -58,6 +60,18 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final statsState = ref.watch(statsViewModelProvider);
+    ref.listen<Locale?>(localeProvider, (previous, next) {
+      if (previous?.languageCode == next?.languageCode) {
+        return;
+      }
+
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId != null) {
+        ref
+            .read(statsViewModelProvider.notifier)
+            .loadStats(userId, statsState.period, next?.languageCode);
+      }
+    });
 
     return Scaffold(
       appBar: _buildAppBar(context, l10n),
@@ -76,6 +90,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
 
                 // Summary Cards
                 _buildSummaryCards(context, l10n, statsState),
+                const SizedBox(height: 24),
+
+                // Recommendation Panel
+                _buildRecommendationPanel(context, statsState),
                 const SizedBox(height: 24),
 
                 // Macro Breakdown
@@ -155,15 +173,6 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                       color: isSelected
                           ? AppColors.primary
                           : Theme.of(context).colorScheme.surface,
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.primary
-                            : Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.16),
-                        width: 1,
-                      ),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -225,10 +234,6 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withValues(alpha: 0.2),
-          width: 1.5,
-        ),
         boxShadow: [
           BoxShadow(
             color: color.withValues(alpha: 0.1),
@@ -258,6 +263,234 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecommendationPanel(
+    BuildContext context,
+    StatsState statsState,
+  ) {
+    final recommendation = statsState.recommendationData.valueOrNull;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final gradient = isDark
+        ? const [Color(0xFF0F2F1A), Color(0xFF1F5E33)]
+        : const [Color(0xFF1B5E20), Color(0xFF43A047)];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _localizedText(context,
+              vi: 'Đề xuất dinh dưỡng', en: 'Nutrition Plan'),
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: gradient,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color:
+                    AppColors.primary.withValues(alpha: isDark ? 0.22 : 0.15),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: recommendation == null
+              ? _buildRecommendationLoading(context)
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                recommendation.title,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                recommendation.summary,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.88),
+                                  fontSize: 13,
+                                  height: 1.45,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            recommendation.focus,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: recommendation.suggestedFoods
+                          .map(
+                            (food) => _buildRecommendationChip(
+                              food,
+                              Colors.white.withValues(alpha: 0.16),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    const SizedBox(height: 14),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: recommendation.actionTips
+                          .map(
+                            (tip) => _buildRecommendationChip(
+                              tip,
+                              Colors.white.withValues(alpha: 0.10),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildMiniMetric(
+                            _localizedText(context,
+                                vi: 'Mục tiêu', en: 'Target'),
+                            '${recommendation.targetCalories} kcal',
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _buildMiniMetric(
+                            _localizedText(context,
+                                vi: 'Còn lại', en: 'Remaining'),
+                            '${recommendation.remainingCalories} kcal',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecommendationLoading(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _localizedText(context,
+              vi: 'Đang tính đề xuất...', en: 'Calculating plan...'),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _localizedText(
+            context,
+            vi: 'Hệ thống đang tổng hợp từ TDEE và lịch sử scan.',
+            en: 'The system is combining TDEE with your scan history.',
+          ),
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.82),
+            fontSize: 13,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecommendationChip(String text, Color backgroundColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMiniMetric(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.76),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],
@@ -299,13 +532,6 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.08),
-              width: 1,
-            ),
           ),
           child: Column(
             children: [
@@ -512,7 +738,6 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
     return AppBottomNav(
       currentIndex: 3,
       surfaceColor: Theme.of(context).colorScheme.surface,
-      borderColor: Theme.of(context).colorScheme.outlineVariant,
       unselectedItemColor:
           Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
     );

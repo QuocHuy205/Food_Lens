@@ -723,7 +723,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return AppBottomNav(
       currentIndex: 0,
       surfaceColor: _surface(context),
-      borderColor: _border(context),
       unselectedItemColor: _mutedText(context),
     );
   }

@@ -6,13 +6,11 @@ import 'package:food_lens/l10n/app_localizations.dart';
 class AppBottomNav extends StatelessWidget {
   final int currentIndex;
   final Color surfaceColor;
-  final Color borderColor;
   final Color unselectedItemColor;
 
   const AppBottomNav({
     required this.currentIndex,
     required this.surfaceColor,
-    required this.borderColor,
     required this.unselectedItemColor,
     super.key,
   });
@@ -21,20 +19,8 @@ class AppBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-        border: Border(
-          top: BorderSide(color: borderColor, width: 0.5),
-        ),
-      ),
+    return ColoredBox(
+      color: surfaceColor,
       child: BottomNavigationBar(
         backgroundColor: surfaceColor,
         elevation: 0,

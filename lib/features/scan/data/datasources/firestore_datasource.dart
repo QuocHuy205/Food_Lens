@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../../../../core/constants/app_constants.dart';
 import '../models/scan_history_model.dart';
 
 abstract class FirestoreDatasource {
@@ -24,6 +26,12 @@ abstract class FirestoreDatasource {
 
   /// Cập nhật một scan history
   Future<void> updateScanHistory(String userId, ScanHistoryModel history);
+
+  /// Lưu snapshot đề xuất dinh dưỡng / món ăn vào Firestore.
+  Future<void> saveRecommendationSnapshot(
+    String userId,
+    Map<String, dynamic> data,
+  );
 }
 
 class FirestoreDatasourceImpl implements FirestoreDatasource {
@@ -115,6 +123,50 @@ class FirestoreDatasourceImpl implements FirestoreDatasource {
           .set(history.toJson(), SetOptions(merge: true));
     } catch (e) {
       throw FirestoreException('Failed to update scan history: $e');
+    }
+  }
+
+  @override
+  Future<void> saveRecommendationSnapshot(
+    String userId,
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final snapshotId = (data['id'] as String?) ??
+          DateTime.now().millisecondsSinceEpoch.toString();
+
+      final userDoc = _firestore
+          .collection(AppConstants.firestoreUsersCollection)
+          .doc(userId);
+
+      final payload = <String, dynamic>{
+        'latestRecommendation': data,
+        'latestRecommendationAt': DateTime.now().toIso8601String(),
+        'recommendationHistory.$snapshotId': data,
+      };
+
+      await userDoc.update(payload);
+    } catch (e) {
+      try {
+        final userDoc = _firestore
+            .collection(AppConstants.firestoreUsersCollection)
+            .doc(userId);
+
+        final payload = <String, dynamic>{
+          'latestRecommendation': data,
+          'latestRecommendationAt': DateTime.now().toIso8601String(),
+          'recommendationHistory': {
+            (data['id'] as String?) ??
+                DateTime.now().millisecondsSinceEpoch.toString(): data,
+          },
+        };
+
+        await userDoc.set(payload, SetOptions(merge: true));
+      } catch (fallbackError) {
+        throw FirestoreException(
+          'Failed to save recommendation snapshot: $fallbackError',
+        );
+      }
     }
   }
 }
