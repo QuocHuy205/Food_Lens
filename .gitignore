@@ -47,3 +47,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# AI Server
+/ai_server/.venv311/
+/ai_server/data/
+/ai_server/.vscode/
