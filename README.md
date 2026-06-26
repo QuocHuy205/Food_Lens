@@ -19,18 +19,6 @@ Food Lens is a production-oriented Flutter mobile app for Vietnamese food recogn
 - Localized the app in English and Vietnamese with full theme support
 - Applied functional error handling and repository-driven data flow
 
-## Screenshots
-
-> Add screenshots here once available.
-
-![App Screenshot](https://via.placeholder.com/800x450.png?text=Food+Lens+Screenshot+Placeholder)
-
-## Demo
-
-> Add a demo video or GIF link here once available.
-
-[Demo video placeholder](#)
-
 ## Architecture Diagram
 
 ```mermaid
